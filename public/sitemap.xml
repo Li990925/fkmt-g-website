@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://fkmt-g.ifree.page/</loc>
+    <priority>1.00</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>http://fkmt-g.ifree.page/tentang</loc>
+    <priority>0.80</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>http://fkmt-g.ifree.page/pengurus</loc>
+    <priority>0.80</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>http://fkmt-g.ifree.page/berita</loc>
+    <priority>0.90</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>http://fkmt-g.ifree.page/galeri</loc>
+    <priority>0.70</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+</urlset>

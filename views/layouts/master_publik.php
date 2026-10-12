@@ -7,8 +7,10 @@
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="Website Resmi Forum Komunikasi Mahasiswa Toili-Gorontalo (FKMT-G). Wadah silaturahmi, informasi kegiatan, kepengurusan, dan kebersamaan mahasiswa Toili di Gorontalo.">
-    <meta name="keywords" content="FKMT-G, Forum Komunikasi Mahasiswa Toili Gorontalo, Toili, Gorontalo, Paguyuban Toili, Organisasi Daerah">
+    <meta name="keywords" content="FKMT-G, Forum Komunikasi Mahasiswa Toili Gorontalo, FKMT, Toili, Gorontalo, Paguyuban Toili, Organisasi Daerah Mahasiswa">
     <meta name="author" content="FKMT-G">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="http://fkmt-g.ifree.page<?= htmlspecialchars($currentUri ?? '') ?>">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
