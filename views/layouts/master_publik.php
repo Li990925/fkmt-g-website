@@ -33,14 +33,28 @@
     <!-- Custom Stylesheet with Cache Busting -->
     <link rel="stylesheet" href="/assets/css/style.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/style.css') ?: '20261012' ?>">
 
-    <!-- Critical CSS: Mencegah SVG Meledak & Menyembunyikan Nav Mobile di Desktop -->
+    <!-- Critical CSS: Mobile Drawer, Z-Index, and Screen Overflow Prevention -->
     <style>
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+        .navbar {
+            z-index: 1200;
+        }
+        .nav-overlay {
+            z-index: 1150;
+        }
         .mobile-bottom-nav {
             display: none !important;
         }
         @media (max-width: 768px) {
             .mobile-bottom-nav {
                 display: flex !important;
+            }
+            .nav-links {
+                z-index: 1250 !important;
             }
         }
         .bottom-nav-item svg {
@@ -64,6 +78,9 @@
     $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     ?>
 
+    <!-- Overlay latar belakang menu mobile (Di bawah navbar & drawer) -->
+    <div class="nav-overlay" id="navOverlay"></div>
+
     <!-- Navbar -->
     <nav class="navbar">
         <a href="/" class="logo">
@@ -75,14 +92,24 @@
         </a>
         
         <!-- Hamburger Button untuk Layar Mobile -->
-        <button class="nav-toggle" id="navToggle" aria-label="Buka Menu Navigasi">
+        <button class="nav-toggle" id="navToggle" aria-label="Buka Menu Navigasi" type="button">
             <span></span>
             <span></span>
             <span></span>
         </button>
 
-        <!-- Menu Links -->
+        <!-- Menu Links (Sidebar Drawer di Mobile) -->
         <ul class="nav-links" id="navLinks">
+            <li class="mobile-drawer-header">
+                <div class="mobile-drawer-brand">
+                    <img src="/assets/images/logo.png" alt="Logo FKMT-G" class="mobile-drawer-logo">
+                    <div>
+                        <div class="mobile-drawer-title">FKMT-G</div>
+                        <div class="mobile-drawer-sub">Menu Navigasi</div>
+                    </div>
+                </div>
+                <button type="button" class="mobile-drawer-close" id="drawerCloseBtn" aria-label="Tutup Menu">&times;</button>
+            </li>
             <li><a href="/" class="<?= ($currentUri === '/') ? 'active' : '' ?>">Beranda</a></li>
             <li><a href="/tentang" class="<?= ($currentUri === '/tentang') ? 'active' : '' ?>">Tentang</a></li>
             <li><a href="/pengurus" class="<?= ($currentUri === '/pengurus') ? 'active' : '' ?>">Pengurus</a></li>
@@ -93,9 +120,6 @@
             </li>
         </ul>
     </nav>
-    
-    <!-- Overlay latar belakang menu mobile -->
-    <div class="nav-overlay" id="navOverlay"></div>
     
     <!-- Main Content Area -->
     <main>
@@ -153,31 +177,41 @@
         </div>
     </footer>
 
-    <!-- Script Hamburger Menu Mobile -->
+    <!-- Script Hamburger Menu Mobile (Drawer) -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const navToggle = document.getElementById('navToggle');
         const navLinks = document.getElementById('navLinks');
         const navOverlay = document.getElementById('navOverlay');
+        const drawerCloseBtn = document.getElementById('drawerCloseBtn');
 
-        if (navToggle && navLinks) {
-            function toggleMenu() {
-                navToggle.classList.toggle('open');
-                navLinks.classList.toggle('active');
-                if (navOverlay) navOverlay.classList.toggle('active');
-                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+        function openMenu() {
+            if (navToggle) navToggle.classList.add('open');
+            if (navLinks) navLinks.classList.add('active');
+            if (navOverlay) navOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMenu() {
+            if (navToggle) navToggle.classList.remove('open');
+            if (navLinks) navLinks.classList.remove('active');
+            if (navOverlay) navOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function toggleMenu() {
+            if (navLinks && navLinks.classList.contains('active')) {
+                closeMenu();
+            } else {
+                openMenu();
             }
+        }
 
-            function closeMenu() {
-                navToggle.classList.remove('open');
-                navLinks.classList.remove('active');
-                if (navOverlay) navOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
+        if (navToggle) navToggle.addEventListener('click', toggleMenu);
+        if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeMenu);
+        if (navOverlay) navOverlay.addEventListener('click', closeMenu);
 
-            navToggle.addEventListener('click', toggleMenu);
-            if (navOverlay) navOverlay.addEventListener('click', closeMenu);
-
+        if (navLinks) {
             navLinks.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', closeMenu);
             });
