@@ -713,14 +713,19 @@ footer {
     box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
 }
 
-/* Tingkat 1: Ketua Umum (Showcase Card) */
+/* Tingkat 1: Pengurus Inti (Ketua, Sekretaris, Bendahara) */
 .cards-puncak {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: 2rem;
+    max-width: 1140px;
+    margin: 0 auto;
 }
 
 .card-leader {
-    max-width: 480px;
+    flex: 1 1 300px;
+    max-width: 350px;
     width: 100%;
     background: white;
     border-radius: 20px;
@@ -730,6 +735,8 @@ footer {
     text-align: center;
     position: relative;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .card-leader:hover {
@@ -743,31 +750,40 @@ footer {
 }
 
 .card-leader-body {
-    padding: 0 2rem 2rem;
+    padding: 0 1.5rem 1.75rem;
     position: relative;
     margin-top: -55px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.leader-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .leader-name {
-    font-size: 1.45rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--dark);
     margin: 0.6rem 0 0.35rem;
 }
 
 .leader-desc {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     color: #64748B;
     font-style: italic;
     line-height: 1.5;
-    margin-top: 0.75rem;
+    margin-top: auto;
     padding: 0.75rem 1rem;
     background: #F8FAFC;
     border-radius: 10px;
     border: 1px dashed #E2E8F0;
 }
 
-/* Tingkat 2: BPH Grid */
+/* Tingkat 2: Ketua Bidang Grid */
 .grid-bph {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -933,6 +949,11 @@ footer {
 .role-badge-teal {
     background: rgba(13, 148, 136, 0.12);
     color: var(--secondary);
+}
+
+.role-badge-amber {
+    background: rgba(217, 119, 6, 0.12);
+    color: #D97706;
 }
 
 .role-badge-subtle {

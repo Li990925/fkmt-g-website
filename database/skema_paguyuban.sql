@@ -178,9 +178,9 @@ INSERT INTO `pengurus` VALUES
 (2,'Dimas Hardy Bramantyo','Sekretaris Umum','',NULL,2,'inti','2026-10-09 19:31:07'),
 (3,'Ega Wati','Bendahara Umum','',NULL,3,'inti','2026-10-09 19:31:07'),
 (4,'Jihad Ramadhan Ghani Abduh','Ketua Bidang Pemberdayaan Organisasi','',NULL,4,'harian','2026-10-09 19:31:07'),
-(5,'Hendra Gunawan','Bidang Sosial',NULL,NULL,5,'bidang','2026-10-09 19:31:07'),
-(6,'Diana Fitri','Bidang Edukasi',NULL,NULL,6,'bidang','2026-10-09 19:31:07'),
-(7,'Rizky Ramadhan','Bidang Humas',NULL,NULL,7,'bidang','2026-10-09 19:31:07');
+(5,'Hendra Gunawan','Anggota Bidang Sosial',NULL,NULL,5,'bidang','2026-10-09 19:31:07'),
+(6,'Diana Fitri','Anggota Bidang Edukasi',NULL,NULL,6,'bidang','2026-10-09 19:31:07'),
+(7,'Rizky Ramadhan','Anggota Bidang Humas',NULL,NULL,7,'bidang','2026-10-09 19:31:07');
 /*!40000 ALTER TABLE `pengurus` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;

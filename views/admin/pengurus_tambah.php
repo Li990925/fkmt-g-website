@@ -21,10 +21,11 @@
             <div>
                 <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #064E3B;">Kategori Pengurus</label>
                 <select name="kategori" required style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem; background: white;">
-                    <option value="inti">Pengurus Inti</option>
-                    <option value="harian">Pengurus Harian</option>
-                    <option value="bidang" selected>Bidang/Divisi</option>
+                    <option value="inti">Pengurus Inti (Ketua, Sekretaris, Bendahara)</option>
+                    <option value="harian">Ketua Bidang</option>
+                    <option value="bidang" selected>Anggota Bidang</option>
                 </select>
+                <small style="color: #64748B; margin-top: 0.3rem; display: block;">Pengurus Inti untuk Ketua/Sekretaris/Bendahara, Ketua Bidang untuk koordinator, atau Anggota Bidang.</small>
             </div>
         </div>
 

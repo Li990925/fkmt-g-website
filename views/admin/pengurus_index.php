@@ -41,8 +41,22 @@
                     </td>
                     <td style="padding: 1rem;"><?= htmlspecialchars($p['jabatan']) ?></td>
                     <td style="padding: 1rem;">
-                        <span style="background: <?= $p['kategori'] == 'inti' ? 'rgba(239,68,68,0.1)' : ($p['kategori'] == 'harian' ? 'rgba(245,158,11,0.1)' : 'rgba(5,150,105,0.1)') ?>; color: <?= $p['kategori'] == 'inti' ? '#EF4444' : ($p['kategori'] == 'harian' ? '#F59E0B' : '#059669') ?>; padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600;">
-                            <?= ucfirst($p['kategori']) ?>
+                        <?php
+                        $badgeBg = 'rgba(5,150,105,0.1)';
+                        $badgeColor = '#059669';
+                        $badgeLabel = 'Anggota Bidang';
+                        if ($p['kategori'] === 'inti') {
+                            $badgeBg = 'rgba(220,38,38,0.1)';
+                            $badgeColor = '#DC2626';
+                            $badgeLabel = 'Pengurus Inti';
+                        } elseif ($p['kategori'] === 'harian') {
+                            $badgeBg = 'rgba(217,119,6,0.1)';
+                            $badgeColor = '#D97706';
+                            $badgeLabel = 'Ketua Bidang';
+                        }
+                        ?>
+                        <span style="background: <?= $badgeBg ?>; color: <?= $badgeColor ?>; padding: 0.25rem 0.65rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600;">
+                            <?= $badgeLabel ?>
                         </span>
                     </td>
                     <td style="padding: 1rem; color: #64748B;"><?= $p['urutan'] ?></td>
