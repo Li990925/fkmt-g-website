@@ -1,0 +1,78 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  lint-and-validate:
+    name: Code Lint & Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql
+
+      - name: Check PHP Syntax (Linting)
+        run: |
+          echo "Memeriksa sintaks semua berkas PHP..."
+          errors=0
+          for file in $(find . -type f -name "*.php" ! -path "./vendor/*"); do
+            php -l "$file" || errors=$((errors+1))
+          done
+          if [ $errors -ne 0 ]; then
+            echo "Ditemukan $errors kesalahan sintaks PHP!"
+            exit 1
+          fi
+          echo "Semua berkas PHP valid dan bebas dari kesalahan sintaks."
+
+      - name: Validate Environment Template
+        run: |
+          if [ ! -f ".env.example" ]; then
+            echo "File .env.example tidak ditemukan!"
+            exit 1
+          fi
+          echo "File .env.example tersedia."
+
+      - name: Validate Database Schema
+        run: |
+          if [ ! -s "database/skema_paguyuban.sql" ]; then
+            echo "File database/skema_paguyuban.sql kosong atau tidak ditemukan!"
+            exit 1
+          fi
+          echo "File database/skema_paguyuban.sql valid."
+
+  deploy:
+    name: Auto Deploy to Hosting (InfinityFree)
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Deploy to InfinityFree via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /fkmt-g.ifree.page/htdocs/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            .env.example
+            .env
+            README.md
+            database/**

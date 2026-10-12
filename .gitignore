@@ -1,0 +1,27 @@
+# Environment & Secret files
+.env
+.env.backup
+.env.production
+.env.local
+*.local
+
+# System & OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Log files
+*.log
+/tmp/
+
+# Composer dependencies (jika digunakan)
+/vendor/
+
+# Archives & Upload packages
+*.zip

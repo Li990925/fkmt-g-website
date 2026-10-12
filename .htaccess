@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Blokir akses publik ke folder internal sensitif
+    RewriteRule ^(app|config|database|routes|views)(/.*)?$ - [F,L]
+    RewriteRule ^(\.env|\.git|\.github)(/.*)?$ - [F,L]
+
+    # Teruskan request ke folder public/ jika DocumentRoot diarahkan ke root proyek
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Matikan directory browsing di root
+Options -Indexes
