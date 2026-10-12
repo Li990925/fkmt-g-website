@@ -31,32 +31,68 @@
     <link rel="manifest" href="/manifest.json">
 
     <!-- Custom Stylesheet with Cache Busting -->
-    <link rel="stylesheet" href="/assets/css/style.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/style.css') ?: '20261012' ?>">
+    <link rel="stylesheet" href="/assets/css/style.css?v=<?= time() ?>">
 
-    <!-- Critical CSS: Mobile Drawer, Z-Index, and Screen Overflow Prevention -->
+    <!-- Critical CSS: Bulletproof Desktop & Mobile Device Isolation -->
     <style>
         html, body {
             overflow-x: hidden;
             width: 100%;
             max-width: 100%;
         }
-        .navbar {
-            z-index: 1200;
+
+        /* Tampilan Desktop (PC & Laptop: > 768px) */
+        @media (min-width: 769px) {
+            .mobile-drawer,
+            .mobile-drawer-header,
+            .mobile-drawer-links,
+            .nav-toggle,
+            .nav-overlay,
+            .mobile-bottom-nav,
+            .pwa-install-banner {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+            .navbar {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                z-index: 1000 !important;
+            }
+            .nav-links {
+                display: flex !important;
+                visibility: visible !important;
+                position: static !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 2rem !important;
+                transform: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                width: auto !important;
+                height: auto !important;
+            }
         }
-        .nav-overlay {
-            z-index: 1150;
-        }
-        .mobile-bottom-nav {
-            display: none !important;
-        }
+
+        /* Tampilan Mobile (Smartphone: <= 768px) */
         @media (max-width: 768px) {
+            .nav-links {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            .nav-toggle {
+                display: flex !important;
+            }
+            .mobile-drawer {
+                display: flex !important;
+            }
             .mobile-bottom-nav {
                 display: flex !important;
             }
-            .nav-links {
-                z-index: 1250 !important;
-            }
         }
+
         .bottom-nav-item svg {
             width: 22px !important;
             height: 22px !important;
@@ -98,18 +134,8 @@
             <span></span>
         </button>
 
-        <!-- Menu Links (Sidebar Drawer di Mobile) -->
-        <ul class="nav-links" id="navLinks">
-            <li class="mobile-drawer-header">
-                <div class="mobile-drawer-brand">
-                    <img src="/assets/images/logo.png" alt="Logo FKMT-G" class="mobile-drawer-logo">
-                    <div>
-                        <div class="mobile-drawer-title">FKMT-G</div>
-                        <div class="mobile-drawer-sub">Menu Navigasi</div>
-                    </div>
-                </div>
-                <button type="button" class="mobile-drawer-close" id="drawerCloseBtn" aria-label="Tutup Menu">&times;</button>
-            </li>
+        <!-- Desktop Nav Links (Hanya Tampil di PC / Layar Besar) -->
+        <ul class="nav-links">
             <li><a href="/" class="<?= ($currentUri === '/') ? 'active' : '' ?>">Beranda</a></li>
             <li><a href="/tentang" class="<?= ($currentUri === '/tentang') ? 'active' : '' ?>">Tentang</a></li>
             <li><a href="/pengurus" class="<?= ($currentUri === '/pengurus') ? 'active' : '' ?>">Pengurus</a></li>
@@ -120,6 +146,30 @@
             </li>
         </ul>
     </nav>
+
+    <!-- Mobile Drawer (Sidebar Khusus Mobile Smartphone) -->
+    <aside class="mobile-drawer" id="mobileDrawer" aria-label="Menu Navigasi Mobile" style="display: none;">
+        <div class="mobile-drawer-header">
+            <div class="mobile-drawer-brand">
+                <img src="/assets/images/logo.png" alt="Logo FKMT-G" class="mobile-drawer-logo" style="width: 36px; height: 36px; max-width: 36px; max-height: 36px; object-fit: contain;">
+                <div>
+                    <div class="mobile-drawer-title">FKMT-G</div>
+                    <div class="mobile-drawer-sub">Menu Navigasi</div>
+                </div>
+            </div>
+            <button type="button" class="mobile-drawer-close" id="drawerCloseBtn" aria-label="Tutup Menu">&times;</button>
+        </div>
+        <ul class="mobile-drawer-links">
+            <li><a href="/" class="<?= ($currentUri === '/') ? 'active' : '' ?>">Beranda</a></li>
+            <li><a href="/tentang" class="<?= ($currentUri === '/tentang') ? 'active' : '' ?>">Tentang</a></li>
+            <li><a href="/pengurus" class="<?= ($currentUri === '/pengurus') ? 'active' : '' ?>">Pengurus</a></li>
+            <li><a href="/berita" class="<?= (strpos($currentUri, '/berita') === 0) ? 'active' : '' ?>">Berita</a></li>
+            <li><a href="/galeri" class="<?= ($currentUri === '/galeri') ? 'active' : '' ?>">Galeri</a></li>
+            <li class="mobile-drawer-login-item">
+                <a href="/login" class="btn-login-drawer">Login Admin</a>
+            </li>
+        </ul>
+    </aside>
     
     <!-- Main Content Area -->
     <main>
@@ -181,26 +231,38 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const navToggle = document.getElementById('navToggle');
-        const navLinks = document.getElementById('navLinks');
+        const mobileDrawer = document.getElementById('mobileDrawer');
         const navOverlay = document.getElementById('navOverlay');
         const drawerCloseBtn = document.getElementById('drawerCloseBtn');
 
         function openMenu() {
             if (navToggle) navToggle.classList.add('open');
-            if (navLinks) navLinks.classList.add('active');
+            if (mobileDrawer) {
+                mobileDrawer.style.display = 'flex';
+                // Trigger reflow for smooth slide transition
+                void mobileDrawer.offsetWidth;
+                mobileDrawer.classList.add('active');
+            }
             if (navOverlay) navOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
 
         function closeMenu() {
             if (navToggle) navToggle.classList.remove('open');
-            if (navLinks) navLinks.classList.remove('active');
+            if (mobileDrawer) {
+                mobileDrawer.classList.remove('active');
+                setTimeout(() => {
+                    if (!mobileDrawer.classList.contains('active') && window.innerWidth > 768) {
+                        mobileDrawer.style.display = 'none';
+                    }
+                }, 320);
+            }
             if (navOverlay) navOverlay.classList.remove('active');
             document.body.style.overflow = '';
         }
 
         function toggleMenu() {
-            if (navLinks && navLinks.classList.contains('active')) {
+            if (mobileDrawer && mobileDrawer.classList.contains('active')) {
                 closeMenu();
             } else {
                 openMenu();
@@ -211,8 +273,8 @@
         if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeMenu);
         if (navOverlay) navOverlay.addEventListener('click', closeMenu);
 
-        if (navLinks) {
-            navLinks.querySelectorAll('a').forEach(link => {
+        if (mobileDrawer) {
+            mobileDrawer.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', closeMenu);
             });
         }
