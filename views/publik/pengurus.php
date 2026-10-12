@@ -22,11 +22,10 @@
         </div>
     <?php endif; ?>
 
-    <!-- Tingkat 1: Pengurus Inti (Ketua, Sekretaris, Bendahara) -->
+    <!-- Pengurus Inti (Ketua, Sekretaris, Bendahara) -->
     <?php if(!empty($inti)): ?>
     <section class="hierarchy-level level-inti">
         <div class="level-header">
-            <span class="level-badge badge-puncak">Tingkat I</span>
             <h2>Pengurus Inti</h2>
             <p>Ketua, Sekretaris, dan Bendahara yang memimpin arah gerak organisasi, ketertiban administrasi, dan tata kelola keuangan FKMT-G</p>
         </div>
@@ -77,11 +76,10 @@
     <?php endif; ?>
     <?php endif; ?>
 
-    <!-- Tingkat 2: Ketua Bidang -->
+    <!-- Ketua Bidang -->
     <?php if(!empty($ketuaBidang)): ?>
     <section class="hierarchy-level level-harian">
         <div class="level-header">
-            <span class="level-badge badge-bph">Tingkat II</span>
             <h2>Ketua Bidang</h2>
             <p>Pimpinan dan koordinator yang bertanggung jawab mengarahkan serta menggerakkan program kerja tiap bidang</p>
         </div>
@@ -120,11 +118,10 @@
     <?php endif; ?>
     <?php endif; ?>
 
-    <!-- Tingkat 3: Anggota Bidang -->
+    <!-- Anggota Bidang -->
     <?php if(!empty($anggotaBidang)): ?>
     <section class="hierarchy-level level-bidang">
         <div class="level-header">
-            <span class="level-badge badge-bidang">Tingkat III</span>
             <h2>Anggota Bidang</h2>
             <p>Seluruh kader dan anggota aktif yang berdedikasi menjalankan roda kegiatan di masing-masing bidang kepengurusan</p>
         </div>
