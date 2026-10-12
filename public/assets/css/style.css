@@ -3120,13 +3120,198 @@ footer {
         font-size: 0.88rem !important;
     }
 
-    /* Cards di Android agar responsif & tidak sempit */
-    .cards-puncak, .grid-bph, .grid-bidang {
-        gap: 1.25rem !important;
+    /* Cards di Android & Mobile: Penataan Struktur Kepengurusan */
+    .pengurus-container {
+        padding: 1.75rem 1rem 6.5rem !important;
+        max-width: 100% !important;
     }
 
-    .card-leader, .card-bph {
+    .hierarchy-level {
+        margin-bottom: 2rem !important;
+    }
+
+    .level-header {
+        margin-bottom: 1.5rem !important;
+        padding: 0 0.5rem !important;
+    }
+
+    .level-header h2 {
+        font-size: 1.45rem !important;
+        margin-bottom: 0.35rem !important;
+        letter-spacing: -0.3px !important;
+    }
+
+    .level-header p {
+        font-size: 0.86rem !important;
+        line-height: 1.5 !important;
+        color: #64748B !important;
         max-width: 100% !important;
+    }
+
+    .hierarchy-connector {
+        margin: 1.25rem 0 1.75rem !important;
+    }
+
+    .connector-line {
+        height: 24px !important;
+    }
+
+    /* 1. Pengurus Inti */
+    .cards-puncak {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 1.35rem !important;
+        width: 100% !important;
+    }
+
+    .card-leader {
+        width: 100% !important;
+        max-width: 380px !important;
+        border-radius: 18px !important;
+        box-shadow: 0 8px 24px rgba(5, 150, 105, 0.08) !important;
+        border: 1px solid rgba(5, 150, 105, 0.15) !important;
+    }
+
+    .card-leader-banner {
+        height: 72px !important;
+    }
+
+    .card-leader-body {
+        padding: 0 1.25rem 1.4rem !important;
+        margin-top: -46px !important;
+    }
+
+    .card-leader .avatar-lg {
+        width: 96px !important;
+        height: 96px !important;
+        border-width: 3.5px !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12) !important;
+    }
+
+    .leader-name {
+        font-size: 1.18rem !important;
+        margin: 0.5rem 0 0.25rem !important;
+    }
+
+    .leader-desc {
+        font-size: 0.82rem !important;
+        padding: 0.65rem 0.85rem !important;
+        margin-top: 0.65rem !important;
+        border-radius: 8px !important;
+    }
+
+    /* 2. Ketua Bidang */
+    .grid-bph {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 1.15rem !important;
+        width: 100% !important;
+        max-width: 380px !important;
+        margin: 0 auto !important;
+    }
+
+    .card-bph {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 1.25rem 1.4rem !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.04) !important;
+        border: 1px solid rgba(13, 148, 136, 0.12) !important;
+    }
+
+    .card-top-stripe {
+        height: 3px !important;
+        margin: 0 -1.25rem 1.15rem !important;
+    }
+
+    .card-bph .avatar-md {
+        width: 78px !important;
+        height: 78px !important;
+        border-width: 3px !important;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.1) !important;
+    }
+
+    .bph-name {
+        font-size: 1.1rem !important;
+        margin: 0.45rem 0 0.2rem !important;
+    }
+
+    .bph-desc {
+        font-size: 0.82rem !important;
+        margin-top: 0.35rem !important;
+        line-height: 1.45 !important;
+    }
+
+    /* 3. Anggota Bidang */
+    .grid-bidang {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 0.85rem !important;
+        width: 100% !important;
+        max-width: 480px !important;
+        margin: 0 auto !important;
+    }
+
+    .card-bidang {
+        padding: 0.95rem 1.15rem !important;
+        border-radius: 14px !important;
+        gap: 0.95rem !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03) !important;
+        border: 1px solid rgba(0,0,0,0.06) !important;
+    }
+
+    .card-bidang .avatar-sm {
+        width: 54px !important;
+        height: 54px !important;
+        border-width: 2.5px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+    }
+
+    .bidang-name {
+        font-size: 1rem !important;
+        margin: 0.2rem 0 0.1rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .bidang-desc {
+        font-size: 0.78rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .role-badge {
+        font-size: 0.72rem !important;
+        padding: 0.2rem 0.65rem !important;
+    }
+}
+
+/* Optimasi Khusus Layar Sangat Kecil (<= 380px) */
+@media (max-width: 380px) {
+    .pengurus-container {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    .level-header h2 {
+        font-size: 1.3rem !important;
+    }
+
+    .card-leader-body {
+        padding: 0 1rem 1.25rem !important;
+    }
+
+    .card-bidang {
+        padding: 0.85rem 0.9rem !important;
+        gap: 0.75rem !important;
+    }
+
+    .card-bidang .avatar-sm {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .bidang-name {
+        font-size: 0.95rem !important;
     }
 }
 
