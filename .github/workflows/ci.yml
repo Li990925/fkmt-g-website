@@ -64,10 +64,11 @@ jobs:
       - name: Deploy to InfinityFree via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER || 'ftpupload.net' }}
+          username: ${{ secrets.FTP_USERNAME || 'if0_42378255' }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /fkmt-g.ifree.page/htdocs/
+          dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
