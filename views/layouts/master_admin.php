@@ -9,17 +9,23 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="apple-touch-icon" href="/assets/images/logo.png">
-    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/admin.css?v=<?= time() ?>">
 </head>
 <body>
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-header" style="display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem 1.25rem;">
-            <img src="/assets/images/logo.png" alt="Logo FKMT-G" style="width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));">
-            <div>
-                <div style="font-weight: 800; font-size: 1.05rem; line-height: 1.2; color: #FFFFFF;">FKMT-G</div>
-                <div style="font-size: 0.7rem; color: #34D399; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Admin Panel</div>
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <img src="/assets/images/logo.png" alt="Logo FKMT-G" class="sidebar-logo">
+                <div>
+                    <div class="sidebar-brand-title">FKMT-G</div>
+                    <div class="sidebar-brand-sub">Admin Panel</div>
+                </div>
             </div>
+            <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Menu">&times;</button>
         </div>
         <nav class="sidebar-nav">
             <a href="/admin" class="<?= ($uri ?? '') === '/admin' ? 'active' : '' ?>">Dashboard</a>
@@ -29,19 +35,42 @@
             <a href="/admin/galeri" class="<?= strpos($uri ?? '', '/admin/galeri') === 0 ? 'active' : '' ?>">Galeri Kegiatan</a>
             <a href="/admin/slider" class="<?= strpos($uri ?? '', '/admin/slider') === 0 ? 'active' : '' ?>">Kelola Slider</a>
             <a href="/admin/password" class="<?= ($uri ?? '') === '/admin/password' ? 'active' : '' ?>">Ganti Password</a>
-            <a href="/" target="_blank" style="margin-top:2rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1rem;">Lihat Website &nearr;</a>
+            <a href="/" target="_blank" class="sidebar-link-external">Lihat Website &nearr;</a>
         </nav>
         
-        <div style="margin-top: auto; padding: 1.5rem;">
-            <a href="/logout" id="logoutBtn" style="background-color: #EF4444; color: white; text-align: center; padding: 0.75rem 1rem; border-radius: 6px; font-weight: 600; text-decoration: none; display: block; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#DC2626'" onmouseout="this.style.backgroundColor='#EF4444'">Log Out</a>
+        <div class="sidebar-footer">
+            <a href="/logout" id="logoutBtn" class="btn-logout">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </a>
         </div>
     </aside>
     
     <!-- Main Content -->
     <main class="main-content">
         <header class="topbar">
-            <div class="breadcrumb">Admin Panel</div>
-            <div class="user-profile">Halo, <?= htmlspecialchars($_SESSION['admin_username'] ?? 'Administrator') ?></div>
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Buka Menu Sidebar">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="topbar-brand-mobile">
+                    <img src="/assets/images/logo.png" alt="Logo FKMT-G" class="topbar-logo-mobile">
+                    <span class="topbar-title-mobile">FKMT-G Admin</span>
+                </div>
+                <div class="breadcrumb desktop-only">Admin Panel</div>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar-badge"><?= strtoupper(mb_substr($_SESSION['admin_username'] ?? 'A', 0, 1)) ?></div>
+                <span class="user-name-text"><?= htmlspecialchars($_SESSION['admin_username'] ?? 'Administrator') ?></span>
+            </div>
         </header>
         
         <div class="content-wrapper">
@@ -112,6 +141,36 @@
         
         // Replace all default confirms with custom modal
         document.addEventListener('DOMContentLoaded', function() {
+            // Mobile Sidebar Toggle Handlers
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            const adminSidebar = document.getElementById('adminSidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+            function openSidebar() {
+                if (adminSidebar) adminSidebar.classList.add('active');
+                if (sidebarOverlay) sidebarOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeSidebar() {
+                if (adminSidebar) adminSidebar.classList.remove('active');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', openSidebar);
+            if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+            if (adminSidebar) {
+                adminSidebar.querySelectorAll('.sidebar-nav a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 768) closeSidebar();
+                    });
+                });
+            }
+
             const deleteLinks = document.querySelectorAll('.btn-delete');
             deleteLinks.forEach(link => {
                 // Hapus atribut onclick bawaan jika ada
