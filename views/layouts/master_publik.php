@@ -30,8 +30,34 @@
     <meta name="apple-mobile-web-app-title" content="FKMT-G">
     <link rel="manifest" href="/manifest.json">
 
-    <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <!-- Custom Stylesheet with Cache Busting -->
+    <link rel="stylesheet" href="/assets/css/style.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/style.css') ?: '20261012' ?>">
+
+    <!-- Critical CSS: Mencegah SVG Meledak & Menyembunyikan Nav Mobile di Desktop -->
+    <style>
+        .mobile-bottom-nav {
+            display: none !important;
+        }
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: flex !important;
+            }
+        }
+        .bottom-nav-item svg {
+            width: 22px !important;
+            height: 22px !important;
+            max-width: 22px !important;
+            max-height: 22px !important;
+        }
+        .pwa-install-banner {
+            display: none !important;
+        }
+        @media (max-width: 768px) {
+            .pwa-install-banner.pwa-active {
+                display: flex !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <?php 
@@ -172,7 +198,7 @@
     </a>
 
     <!-- PWA Install Banner (Khusus Android/Mobile) -->
-    <div id="pwaInstallBanner" class="pwa-install-banner">
+    <div id="pwaInstallBanner" class="pwa-install-banner" style="display: none;">
         <img src="/assets/images/logo.png" alt="Logo FKMT-G" class="pwa-install-icon">
         <div class="pwa-install-text">
             <h4 class="pwa-install-title">Pasang Aplikasi FKMT-G</h4>
@@ -183,16 +209,16 @@
     </div>
 
     <!-- Mobile Bottom Navigation Bar (App Dock Khusus Android / Smartphone) -->
-    <nav class="mobile-bottom-nav" aria-label="Navigasi Bawah Mobile">
+    <nav class="mobile-bottom-nav" aria-label="Navigasi Bawah Mobile" style="display: none;">
         <a href="/" class="bottom-nav-item <?= ($currentUri === '/') ? 'active' : '' ?>">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;max-width:22px;max-height:22px;">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
             <span>Beranda</span>
         </a>
         <a href="/tentang" class="bottom-nav-item <?= ($currentUri === '/tentang') ? 'active' : '' ?>">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;max-width:22px;max-height:22px;">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="16" x2="12" y2="12"></line>
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -200,7 +226,7 @@
             <span>Tentang</span>
         </a>
         <a href="/pengurus" class="bottom-nav-item <?= ($currentUri === '/pengurus') ? 'active' : '' ?>">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;max-width:22px;max-height:22px;">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -209,7 +235,7 @@
             <span>Pengurus</span>
         </a>
         <a href="/berita" class="bottom-nav-item <?= (strpos($currentUri, '/berita') === 0) ? 'active' : '' ?>">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;max-width:22px;max-height:22px;">
                 <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"></path>
                 <path d="M19 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
@@ -218,7 +244,7 @@
             <span>Berita</span>
         </a>
         <a href="/galeri" class="bottom-nav-item <?= ($currentUri === '/galeri') ? 'active' : '' ?>">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;max-width:22px;max-height:22px;">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <polyline points="21 15 16 10 5 21"></polyline>
@@ -247,7 +273,8 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        if (pwaBanner && !sessionStorage.getItem('pwa_dismissed')) {
+        if (pwaBanner && window.innerWidth <= 768 && !sessionStorage.getItem('pwa_dismissed')) {
+            pwaBanner.classList.add('pwa-active');
             pwaBanner.style.display = 'flex';
         }
     });
@@ -262,13 +289,19 @@
                 }
                 deferredPrompt = null;
             }
-            if (pwaBanner) pwaBanner.style.display = 'none';
+            if (pwaBanner) {
+                pwaBanner.classList.remove('pwa-active');
+                pwaBanner.style.display = 'none';
+            }
         });
     }
 
     if (pwaClose) {
         pwaClose.addEventListener('click', () => {
-            if (pwaBanner) pwaBanner.style.display = 'none';
+            if (pwaBanner) {
+                pwaBanner.classList.remove('pwa-active');
+                pwaBanner.style.display = 'none';
+            }
             sessionStorage.setItem('pwa_dismissed', '1');
         });
     }
