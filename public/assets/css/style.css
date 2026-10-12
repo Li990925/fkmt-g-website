@@ -2497,3 +2497,218 @@ footer {
     font-weight: 600;
 }
 
+/* ========================================================
+   ANDROID / MOBILE NATIVE EXPERIENCE & BOTTOM NAVIGATION
+   ======================================================== */
+
+/* Bottom Navigation Bar (App Dock) */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(5, 150, 105, 0.12);
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.08);
+    z-index: 999;
+    padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #64748B;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.35rem 0.5rem;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex: 1;
+    max-width: 72px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+    margin-bottom: 2px;
+    transition: transform 0.2s ease;
+}
+
+.bottom-nav-item:active {
+    transform: scale(0.92);
+}
+
+.bottom-nav-item.active {
+    color: #059669;
+    font-weight: 700;
+}
+
+.bottom-nav-item.active svg {
+    color: #059669;
+    transform: translateY(-1px);
+}
+
+.bottom-nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    width: 16px;
+    height: 3px;
+    background: #059669;
+    border-radius: 99px;
+}
+
+/* Android PWA Install Banner */
+.pwa-install-banner {
+    display: none;
+    position: fixed;
+    top: 72px;
+    left: 1rem;
+    right: 1rem;
+    max-width: 480px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #064E3B 0%, #059669 100%);
+    color: white;
+    padding: 0.85rem 1.15rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(5, 150, 105, 0.35);
+    z-index: 1001;
+    align-items: center;
+    gap: 0.85rem;
+    animation: slideDownBanner 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownBanner {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.pwa-install-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    object-fit: contain;
+    background: white;
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.pwa-install-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-install-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 2px;
+}
+
+.pwa-install-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.pwa-install-btn {
+    background: white;
+    color: #064E3B;
+    border: none;
+    padding: 0.45rem 0.9rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: transform 0.15s ease;
+}
+
+.pwa-install-btn:active {
+    transform: scale(0.95);
+}
+
+.pwa-install-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0.75;
+    padding: 0 0.25rem;
+    line-height: 1;
+}
+
+/* Media Query Khusus Layar Smartphone (Android & Mobile) */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 74px !important;
+    }
+
+    .mobile-bottom-nav {
+        display: flex;
+    }
+
+    /* Pindahkan floating WhatsApp agar berada di atas bottom nav */
+    .floating-whatsapp {
+        bottom: 84px !important;
+        right: 18px !important;
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .floating-whatsapp svg {
+        width: 24px !important;
+        height: 24px !important;
+    }
+
+    /* Optimasi tap target dan fluid typography untuk Android */
+    .navbar {
+        padding: 0.75rem 1.25rem !important;
+    }
+
+    .logo-img {
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .logo-title {
+        font-size: 1.15rem !important;
+    }
+
+    .logo-subtitle {
+        font-size: 0.65rem !important;
+    }
+
+    .page-header {
+        padding: 2.2rem 1rem !important;
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem !important;
+    }
+
+    .page-header p {
+        font-size: 0.88rem !important;
+    }
+
+    /* Cards di Android agar responsif & tidak sempit */
+    .cards-puncak, .grid-bph, .grid-bidang {
+        gap: 1.25rem !important;
+    }
+
+    .card-leader, .card-bph {
+        max-width: 100% !important;
+    }
+}
+
