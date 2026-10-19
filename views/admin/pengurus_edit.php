@@ -36,7 +36,7 @@
                     <img src="/assets/images/pengurus/<?= htmlspecialchars($p['foto']) ?>" alt="Foto Pengurus" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #E2E8F0;">
                 </div>
             <?php endif; ?>
-            <input type="file" name="foto" accept="image/png, image/jpeg, image/jpg" style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem;">
+            <input type="file" name="foto" accept="image/png, image/jpeg, image/webp" style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem;">
             <small style="color: #64748B; margin-top: 0.3rem; display: block;">Format yang didukung: JPG, JPEG, PNG. Kosongkan jika tidak ingin mengubah foto.</small>
         </div>
 

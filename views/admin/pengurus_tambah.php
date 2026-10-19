@@ -31,7 +31,7 @@
 
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #064E3B;">Foto Pengurus (Opsional)</label>
-            <input type="file" name="foto" accept="image/png, image/jpeg, image/jpg" style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem;">
+            <input type="file" name="foto" accept="image/png, image/jpeg, image/webp" style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem;">
             <small style="color: #64748B; margin-top: 0.3rem; display: block;">Format yang didukung: JPG, JPEG, PNG.</small>
         </div>
 

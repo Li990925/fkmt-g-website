@@ -5,26 +5,6 @@
     <h1 class="page-title" style="margin-bottom:0;">Pengaturan Akun & Ganti Password</h1>
 </div>
 
-<?php if(!empty($success)): ?>
-    <div style="background-color: #ECFDF5; border-left: 4px solid #059669; padding: 1rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: #065F46;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <span style="font-weight: 500; font-size: 0.95rem;"><?= htmlspecialchars($success) ?></span>
-    </div>
-<?php endif; ?>
-
-<?php if(!empty($error)): ?>
-    <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 1rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: #991B1B;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span style="font-weight: 500; font-size: 0.95rem;"><?= htmlspecialchars($error) ?></span>
-    </div>
-<?php endif; ?>
 
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
     <!-- Form Ganti Password -->

@@ -15,8 +15,8 @@
 
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #064E3B;">Pilih Foto</label>
-            <input type="file" name="foto" required accept="image/png, image/jpeg, image/jpg" style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem;">
-            <small style="color: #64748B; margin-top: 0.3rem; display: block;">Format yang didukung: JPG, JPEG, PNG. Wajib diisi.</small>
+            <input type="file" name="foto" required accept="image/png, image/jpeg, image/webp" style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px; outline: none; font-size: 1rem;">
+            <small style="color: #64748B; margin-top: 0.3rem; display: block;">Format yang didukung: JPG, JPEG, PNG, WEBP. Maksimal 5MB. Wajib diisi.</small>
         </div>
 
         <div>

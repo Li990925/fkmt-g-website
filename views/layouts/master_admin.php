@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? 'Admin | FKMT-G' ?></title>
+    <title><?= htmlspecialchars($title ?? 'Admin | FKMT-G') ?></title>
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="apple-touch-icon" href="/assets/images/logo.png">
-    <link rel="stylesheet" href="/assets/css/admin.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/assets/css/admin.css?v=<?= @filemtime(__DIR__ . '/../../public/assets/css/admin.css') ?: '1' ?>">
 </head>
 <body>
     <!-- Mobile Sidebar Backdrop Overlay -->
@@ -103,7 +103,7 @@
                 <?php unset($_SESSION['flash_error']); ?>
             <?php endif; ?>
 
-            <?= $content ?? '' ?>
+            <?= \app\Config\Csrf::injectIntoForms($content ?? '') ?>
         </div>
     </main>
 
@@ -115,10 +115,15 @@
             <p>Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Batal</button>
-                <a href="#" id="confirmDeleteBtn" class="btn-danger">Ya, Hapus</a>
+                <button type="button" id="confirmDeleteBtn" class="btn-danger" style="border: none; cursor: pointer; font: inherit;">Ya, Hapus</button>
             </div>
         </div>
     </div>
+
+    <!-- Form tersembunyi untuk aksi hapus via POST + token CSRF -->
+    <form id="deleteForm" method="POST" action="" style="display: none;">
+        <?= \app\Config\Csrf::field() ?>
+    </form>
 
     <!-- Loading Overlay untuk Logout -->
     <div class="loading-overlay-admin" id="logoutLoadingOverlay">
@@ -130,14 +135,31 @@
     </div>
 
     <script>
+        let pendingDeleteUrl = null;
+
         function openDeleteModal(url) {
-            document.getElementById('confirmDeleteBtn').href = url;
+            pendingDeleteUrl = url;
             document.getElementById('deleteModal').style.display = 'flex';
         }
 
         function closeDeleteModal() {
+            pendingDeleteUrl = null;
             document.getElementById('deleteModal').style.display = 'none';
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    if (!pendingDeleteUrl) return;
+                    const form = document.getElementById('deleteForm');
+                    form.action = pendingDeleteUrl;
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = 'Menghapus...';
+                    form.submit();
+                });
+            }
+        });
         
         // Replace all default confirms with custom modal
         document.addEventListener('DOMContentLoaded', function() {

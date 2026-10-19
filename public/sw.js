@@ -1,5 +1,5 @@
 // Service Worker untuk FKMT-G Mobile PWA
-const CACHE_NAME = 'fkmtg-cache-v1';
+const CACHE_NAME = 'fkmtg-cache-v2';
 const urlsToCache = [
   '/',
   '/assets/css/style.css',
@@ -30,7 +30,14 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Jangan campuri halaman admin/login (selalu butuh data terbaru dari server)
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith('/admin') || url.pathname === '/login') return;
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(() =>
+      // ignoreSearch: style.css?v=123 tetap cocok dengan cache /assets/css/style.css
+      caches.match(event.request, { ignoreSearch: true })
+    )
   );
 });

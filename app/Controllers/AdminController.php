@@ -2,6 +2,137 @@
 namespace app\Controllers;
 
 class AdminController {
+    const MAX_UPLOAD_SIZE = 5242880; // 5MB
+    const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+    // MIME type asli => ekstensi file yang disimpan
+    const ALLOWED_IMAGE_MIMES = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+    ];
+
+    // =====================================================================
+    // Helper internal
+    // =====================================================================
+
+    private function imageDir($subDir) {
+        return __DIR__ . '/../../public/assets/images/' . $subDir . '/';
+    }
+
+    private function redirectWithError($url, $message) {
+        $_SESSION['flash_error'] = $message;
+        header('Location: ' . $url);
+        exit;
+    }
+
+    private function detectMime($path) {
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mime = finfo_file($finfo, $path);
+                finfo_close($finfo);
+                return $mime ?: '';
+            }
+        }
+        if (function_exists('mime_content_type')) {
+            return mime_content_type($path) ?: '';
+        }
+        $info = @getimagesize($path);
+        return $info['mime'] ?? '';
+    }
+
+    /**
+     * Upload gambar dengan validasi ekstensi, MIME type asli, isi gambar, dan ukuran.
+     * Folder tujuan dibuat otomatis jika belum ada.
+     *
+     * @return array ['file' => string|null, 'error' => string|null]
+     */
+    private function handleImageUpload($field, $subDir, $prefix = '', $required = false) {
+        $file = $_FILES[$field] ?? null;
+
+        if (!$file || !isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            return ['file' => null, 'error' => $required ? 'Foto wajib dipilih.' : null];
+        }
+        if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
+            return ['file' => null, 'error' => 'Ukuran file melebihi batas maksimal server (' . ini_get('upload_max_filesize') . ').'];
+        }
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return ['file' => null, 'error' => 'Gagal mengunggah file (kode error: ' . (int)$file['error'] . ').'];
+        }
+        if ($file['size'] > self::MAX_UPLOAD_SIZE) {
+            return ['file' => null, 'error' => 'Ukuran file maksimal 5MB.'];
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
+            return ['file' => null, 'error' => 'Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.'];
+        }
+
+        // Cek isi file yang sebenarnya, bukan hanya nama/ekstensinya
+        $mime = $this->detectMime($file['tmp_name']);
+        if (!isset(self::ALLOWED_IMAGE_MIMES[$mime]) || @getimagesize($file['tmp_name']) === false) {
+            return ['file' => null, 'error' => 'File yang diunggah bukan gambar yang valid.'];
+        }
+
+        $dir = $this->imageDir($subDir);
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            return ['file' => null, 'error' => 'Folder upload tidak dapat dibuat. Periksa izin folder di server.'];
+        }
+        if (!is_writable($dir)) {
+            return ['file' => null, 'error' => 'Folder upload tidak memiliki izin tulis.'];
+        }
+
+        // Ekstensi ditentukan dari MIME asli agar tidak bisa dimanipulasi
+        $name = $prefix . bin2hex(random_bytes(8)) . '.' . self::ALLOWED_IMAGE_MIMES[$mime];
+        if (!move_uploaded_file($file['tmp_name'], $dir . $name)) {
+            return ['file' => null, 'error' => 'Gagal menyimpan file ke server.'];
+        }
+
+        return ['file' => $name, 'error' => null];
+    }
+
+    /**
+     * Hapus file gambar secara aman (tidak menghentikan proses jika file tidak ada / gagal dihapus)
+     */
+    private function deleteImage($subDir, $filename) {
+        if (empty($filename)) {
+            return;
+        }
+        $path = $this->imageDir($subDir) . basename($filename);
+        if (is_file($path) && !@unlink($path)) {
+            error_log('Gagal menghapus file: ' . $path);
+        }
+    }
+
+    /**
+     * Cegah CSV/Formula Injection saat file dibuka di Excel / Spreadsheet
+     */
+    private function csvSafe($value) {
+        $value = (string)($value ?? '');
+        if (strlen($value) > 1 && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'" . $value;
+        }
+        return $value;
+    }
+
+    private function generateSlug($beritaModel, $judul, $fallback, $excludeId = null) {
+        $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $judul), '-'));
+        if (empty($baseSlug)) {
+            $baseSlug = $fallback;
+        }
+        $slug = $baseSlug;
+        $counter = 1;
+        while ($beritaModel->isSlugExists($slug, $excludeId)) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+        return $slug;
+    }
+
+    // =====================================================================
+    // Dashboard
+    // =====================================================================
+
     public function dashboard() {
         global $uri;
         
@@ -21,6 +152,10 @@ class AdminController {
 
         require_once __DIR__ . '/../../views/admin/dashboard.php';
     }
+
+    // =====================================================================
+    // Berita
+    // =====================================================================
 
     public function berita() {
         global $uri;
@@ -42,43 +177,24 @@ class AdminController {
         $beritaModel = new \app\Models\Berita();
         
         $judul = trim($_POST['judul'] ?? '');
-        $kategori = $_POST['kategori'] ?? 'Umum';
+        $kategori = trim($_POST['kategori'] ?? '') ?: 'Umum';
         $konten = trim($_POST['konten'] ?? '');
         
-        if (!empty($judul) && !empty($konten)) {
-            // Generate unique slug
-            $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $judul), '-'));
-            if (empty($baseSlug)) {
-                $baseSlug = 'berita-' . time();
-            }
-            $slug = $baseSlug;
-            $counter = 1;
-            while ($beritaModel->isSlugExists($slug)) {
-                $slug = $baseSlug . '-' . $counter;
-                $counter++;
-            }
-
-            // Handle optional image upload
-            $gambar = null;
-            if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = __DIR__ . '/../../public/assets/images/berita/';
-                if (!is_dir($uploadDir)) {
-                    @mkdir($uploadDir, 0755, true);
-                }
-                $fileExtension = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-                
-                if (in_array($fileExtension, $allowedExtensions)) {
-                    $gambarName = 'berita_' . uniqid() . '.' . $fileExtension;
-                    if (move_uploaded_file($_FILES['gambar']['tmp_name'], $uploadDir . $gambarName)) {
-                        $gambar = $gambarName;
-                    }
-                }
-            }
-
-            $beritaModel->create($judul, $slug, $konten, $kategori, $gambar);
-            $_SESSION['flash_success'] = "Berita baru berhasil ditambahkan!";
+        if (empty($judul) || empty($konten)) {
+            $this->redirectWithError('/admin/berita/tambah', 'Judul dan konten berita wajib diisi!');
         }
+
+        // Generate unique slug
+        $slug = $this->generateSlug($beritaModel, $judul, 'berita-' . time());
+
+        // Handle optional image upload
+        $upload = $this->handleImageUpload('gambar', 'berita', 'berita_');
+        if ($upload['error']) {
+            $this->redirectWithError('/admin/berita/tambah', 'Berita belum disimpan: ' . $upload['error']);
+        }
+
+        $beritaModel->create($judul, $slug, $konten, $kategori, $upload['file']);
+        $_SESSION['flash_success'] = "Berita baru berhasil ditambahkan!";
         
         header('Location: /admin/berita');
         exit;
@@ -91,9 +207,7 @@ class AdminController {
         $b = $beritaModel->readById($id);
         
         if (!$b) {
-            $_SESSION['flash_error'] = "Berita tidak ditemukan!";
-            header('Location: /admin/berita');
-            exit;
+            $this->redirectWithError('/admin/berita', 'Berita tidak ditemukan!');
         }
         
         require_once __DIR__ . '/../../views/admin/berita_edit.php';
@@ -105,57 +219,35 @@ class AdminController {
         
         $current = $beritaModel->readById($id);
         if (!$current) {
-            $_SESSION['flash_error'] = "Berita tidak ditemukan!";
-            header('Location: /admin/berita');
-            exit;
+            $this->redirectWithError('/admin/berita', 'Berita tidak ditemukan!');
         }
         
         $judul = trim($_POST['judul'] ?? '');
-        $kategori = $_POST['kategori'] ?? 'Umum';
+        $kategori = trim($_POST['kategori'] ?? '') ?: 'Umum';
         $konten = trim($_POST['konten'] ?? '');
+        $editUrl = '/admin/berita/edit/' . (int)$id;
         
-        if (!empty($judul) && !empty($konten)) {
-            // Generate unique slug
-            $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $judul), '-'));
-            if (empty($baseSlug)) {
-                $baseSlug = 'berita-' . $id;
-            }
-            $slug = $baseSlug;
-            $counter = 1;
-            while ($beritaModel->isSlugExists($slug, $id)) {
-                $slug = $baseSlug . '-' . $counter;
-                $counter++;
-            }
-
-            // Handle optional new image upload
-            $gambar = null; // null means keep existing image
-            if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = __DIR__ . '/../../public/assets/images/berita/';
-                if (!is_dir($uploadDir)) {
-                    @mkdir($uploadDir, 0755, true);
-                }
-                $fileExtension = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-                
-                if (in_array($fileExtension, $allowedExtensions)) {
-                    $gambarName = 'berita_' . uniqid() . '.' . $fileExtension;
-                    if (move_uploaded_file($_FILES['gambar']['tmp_name'], $uploadDir . $gambarName)) {
-                        $gambar = $gambarName;
-                        // Hapus file gambar lama jika ada
-                        if (!empty($current['gambar'])) {
-                            $oldFile = $uploadDir . $current['gambar'];
-                            if (file_exists($oldFile)) {
-                                @unlink($oldFile);
-                            }
-                        }
-                    }
-                }
-            }
-
-            $beritaModel->update($id, $judul, $slug, $konten, $kategori, $gambar);
-            $_SESSION['flash_success'] = "Perubahan data berita berhasil disimpan!";
+        if (empty($judul) || empty($konten)) {
+            $this->redirectWithError($editUrl, 'Judul dan konten berita wajib diisi!');
         }
-        
+
+        // Generate unique slug
+        $slug = $this->generateSlug($beritaModel, $judul, 'berita-' . (int)$id, $id);
+
+        // Handle optional new image upload (null = tetap gunakan gambar lama)
+        $upload = $this->handleImageUpload('gambar', 'berita', 'berita_');
+        if ($upload['error']) {
+            $this->redirectWithError($editUrl, 'Perubahan belum disimpan: ' . $upload['error']);
+        }
+
+        $beritaModel->update($id, $judul, $slug, $konten, $kategori, $upload['file']);
+
+        // Hapus file gambar lama jika diganti
+        if ($upload['file'] !== null) {
+            $this->deleteImage('berita', $current['gambar'] ?? null);
+        }
+
+        $_SESSION['flash_success'] = "Perubahan data berita berhasil disimpan!";
         header('Location: /admin/berita');
         exit;
     }
@@ -165,18 +257,34 @@ class AdminController {
         $beritaModel = new \app\Models\Berita();
         
         $current = $beritaModel->readById($id);
-        if ($current && !empty($current['gambar'])) {
-            $filePath = __DIR__ . '/../../public/assets/images/berita/' . $current['gambar'];
-            if (file_exists($filePath)) {
-                @unlink($filePath);
-            }
+        if (!$current) {
+            $this->redirectWithError('/admin/berita', 'Berita tidak ditemukan!');
         }
-        
+
         $beritaModel->delete($id);
+        $this->deleteImage('berita', $current['gambar'] ?? null);
         $_SESSION['flash_success'] = "Berita berhasil dihapus!";
         
         header('Location: /admin/berita');
         exit;
+    }
+
+    // =====================================================================
+    // Pengurus
+    // =====================================================================
+
+    private function readPengurusInput() {
+        $kategori = $_POST['kategori'] ?? 'bidang';
+        if (!in_array($kategori, ['inti', 'harian', 'bidang'], true)) {
+            $kategori = 'bidang';
+        }
+        return [
+            'nama'      => trim($_POST['nama'] ?? ''),
+            'jabatan'   => trim($_POST['jabatan'] ?? ''),
+            'kategori'  => $kategori,
+            'urutan'    => (int)($_POST['urutan'] ?? 0),
+            'deskripsi' => trim($_POST['deskripsi'] ?? ''),
+        ];
     }
 
     public function pengurus() {
@@ -198,32 +306,18 @@ class AdminController {
         require_once __DIR__ . '/../../app/Models/Pengurus.php';
         $pengurusModel = new \app\Models\Pengurus();
         
-        $nama = $_POST['nama'] ?? '';
-        $jabatan = $_POST['jabatan'] ?? '';
-        $kategori = $_POST['kategori'] ?? 'bidang';
-        $urutan = $_POST['urutan'] ?? 0;
-        $deskripsi = $_POST['deskripsi'] ?? '';
-        $foto = null;
+        $in = $this->readPengurusInput();
+        if (empty($in['nama']) || empty($in['jabatan'])) {
+            $this->redirectWithError('/admin/pengurus/tambah', 'Nama dan jabatan pengurus wajib diisi!');
+        }
 
-        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../public/assets/images/pengurus/';
-            $fileExtension = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-            $maxFileSize = 5 * 1024 * 1024; // 5MB
-            
-            if (in_array($fileExtension, $allowedExtensions) && $_FILES['foto']['size'] <= $maxFileSize) {
-                $fotoName = uniqid() . '.' . $fileExtension;
-                $uploadFile = $uploadDir . $fotoName;
-                if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadFile)) {
-                    $foto = $fotoName;
-                }
-            }
+        $upload = $this->handleImageUpload('foto', 'pengurus', 'pengurus_');
+        if ($upload['error']) {
+            $this->redirectWithError('/admin/pengurus/tambah', 'Data belum disimpan: ' . $upload['error']);
         }
         
-        if (!empty($nama) && !empty($jabatan)) {
-            $pengurusModel->create($nama, $jabatan, $kategori, $urutan, $deskripsi, $foto);
-            $_SESSION['flash_success'] = "Data pengurus baru berhasil ditambahkan!";
-        }
+        $pengurusModel->create($in['nama'], $in['jabatan'], $in['kategori'], $in['urutan'], $in['deskripsi'], $upload['file']);
+        $_SESSION['flash_success'] = "Data pengurus baru berhasil ditambahkan!";
         
         header('Location: /admin/pengurus');
         exit;
@@ -234,14 +328,12 @@ class AdminController {
         $pengurusModel = new \app\Models\Pengurus();
         
         $p = $pengurusModel->readById($id);
-        if ($p && !empty($p['foto'])) {
-            $filePath = __DIR__ . '/../../public/assets/images/pengurus/' . $p['foto'];
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
+        if (!$p) {
+            $this->redirectWithError('/admin/pengurus', 'Data pengurus tidak ditemukan!');
         }
 
         $pengurusModel->delete($id);
+        $this->deleteImage('pengurus', $p['foto'] ?? null);
         $_SESSION['flash_success'] = "Data pengurus berhasil dihapus!";
         
         header('Location: /admin/pengurus');
@@ -256,9 +348,7 @@ class AdminController {
         $p = $pengurusModel->readById($id);
         
         if (!$p) {
-            $_SESSION['flash_error'] = "Data pengurus tidak ditemukan!";
-            header('Location: /admin/pengurus');
-            exit;
+            $this->redirectWithError('/admin/pengurus', 'Data pengurus tidak ditemukan!');
         }
         
         require_once __DIR__ . '/../../views/admin/pengurus_edit.php';
@@ -267,45 +357,51 @@ class AdminController {
     public function pengurusUpdate($id) {
         require_once __DIR__ . '/../../app/Models/Pengurus.php';
         $pengurusModel = new \app\Models\Pengurus();
-        
-        $nama = $_POST['nama'] ?? '';
-        $jabatan = $_POST['jabatan'] ?? '';
-        $kategori = $_POST['kategori'] ?? 'bidang';
-        $urutan = $_POST['urutan'] ?? 0;
-        $deskripsi = $_POST['deskripsi'] ?? '';
-        $foto = null;
-        
-        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../public/assets/images/pengurus/';
-            $fileExtension = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-            $maxFileSize = 5 * 1024 * 1024; // 5MB
-            
-            if (in_array($fileExtension, $allowedExtensions) && $_FILES['foto']['size'] <= $maxFileSize) {
-                $fotoName = uniqid() . '.' . $fileExtension;
-                $uploadFile = $uploadDir . $fotoName;
-                if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadFile)) {
-                    $foto = $fotoName;
-                    
-                    // hapus foto lama
-                    $p = $pengurusModel->readById($id);
-                    if ($p && !empty($p['foto'])) {
-                        $oldFilePath = $uploadDir . $p['foto'];
-                        if (file_exists($oldFilePath)) {
-                            unlink($oldFilePath);
-                        }
-                    }
-                }
-            }
+
+        $current = $pengurusModel->readById($id);
+        if (!$current) {
+            $this->redirectWithError('/admin/pengurus', 'Data pengurus tidak ditemukan!');
         }
         
-        if (!empty($nama) && !empty($jabatan)) {
-            $pengurusModel->update($id, $nama, $jabatan, $kategori, $urutan, $deskripsi, $foto);
-            $_SESSION['flash_success'] = "Perubahan data pengurus berhasil disimpan!";
+        $in = $this->readPengurusInput();
+        $editUrl = '/admin/pengurus/edit/' . (int)$id;
+        if (empty($in['nama']) || empty($in['jabatan'])) {
+            $this->redirectWithError($editUrl, 'Nama dan jabatan pengurus wajib diisi!');
+        }
+
+        $upload = $this->handleImageUpload('foto', 'pengurus', 'pengurus_');
+        if ($upload['error']) {
+            $this->redirectWithError($editUrl, 'Perubahan belum disimpan: ' . $upload['error']);
         }
         
+        $pengurusModel->update($id, $in['nama'], $in['jabatan'], $in['kategori'], $in['urutan'], $in['deskripsi'], $upload['file']);
+
+        // hapus foto lama jika diganti
+        if ($upload['file'] !== null) {
+            $this->deleteImage('pengurus', $current['foto'] ?? null);
+        }
+
+        $_SESSION['flash_success'] = "Perubahan data pengurus berhasil disimpan!";
         header('Location: /admin/pengurus');
         exit;
+    }
+
+    // =====================================================================
+    // Anggota
+    // =====================================================================
+
+    private function readAnggotaInput() {
+        return [
+            'nama'           => trim($_POST['nama'] ?? ''),
+            'alamat'         => trim($_POST['alamat'] ?? ''),
+            'kampus'         => trim($_POST['kampus'] ?? ''),
+            'fakultas'       => trim($_POST['fakultas'] ?? ''),
+            'jurusan'        => trim($_POST['jurusan'] ?? ''),
+            'angkatan'       => !empty($_POST['angkatan']) ? (int)$_POST['angkatan'] : null,
+            'no_wa'          => trim($_POST['no_wa'] ?? ''),
+            'email'          => trim($_POST['email'] ?? ''),
+            'golongan_darah' => trim($_POST['golongan_darah'] ?? ''),
+        ];
     }
 
     public function anggota() {
@@ -330,34 +426,26 @@ class AdminController {
         require_once __DIR__ . '/../../app/Models/Anggota.php';
         $anggotaModel = new \app\Models\Anggota();
         
-        $nama = $_POST['nama'] ?? '';
-        $alamat = $_POST['alamat'] ?? '';
-        $kampus = $_POST['kampus'] ?? '';
-        $fakultas = $_POST['fakultas'] ?? '';
-        $jurusan = $_POST['jurusan'] ?? '';
-        $angkatan = !empty($_POST['angkatan']) ? (int)$_POST['angkatan'] : null;
-        $no_wa = $_POST['no_wa'] ?? '';
-        $email = $_POST['email'] ?? '';
-        $golongan_darah = $_POST['golongan_darah'] ?? '';
-        
-        if (!empty($nama) && !empty($kampus)) {
-            $anggotaModel->create($nama, $alamat, $kampus, $fakultas, $jurusan, $angkatan, $no_wa, $email, $golongan_darah);
-            $_SESSION['flash_success'] = "Data anggota baru berhasil ditambahkan!";
+        $in = $this->readAnggotaInput();
+        if (empty($in['nama']) || empty($in['kampus'])) {
+            $this->redirectWithError('/admin/anggota/tambah', 'Nama dan asal kampus wajib diisi!');
         }
+
+        $anggotaModel->create($in['nama'], $in['alamat'], $in['kampus'], $in['fakultas'], $in['jurusan'], $in['angkatan'], $in['no_wa'], $in['email'], $in['golongan_darah']);
+        $_SESSION['flash_success'] = "Data anggota baru berhasil ditambahkan!";
         
         header('Location: /admin/anggota');
         exit;
     }
 
     public function anggotaEdit($id) {
+        global $uri;
         require_once __DIR__ . '/../../app/Models/Anggota.php';
         $anggotaModel = new \app\Models\Anggota();
         $anggota = $anggotaModel->readById($id);
         
         if (!$anggota) {
-            $_SESSION['flash_error'] = "Data anggota tidak ditemukan!";
-            header('Location: /admin/anggota');
-            exit;
+            $this->redirectWithError('/admin/anggota', 'Data anggota tidak ditemukan!');
         }
         
         require_once __DIR__ . '/../../views/admin/anggota_edit.php';
@@ -367,20 +455,13 @@ class AdminController {
         require_once __DIR__ . '/../../app/Models/Anggota.php';
         $anggotaModel = new \app\Models\Anggota();
         
-        $nama = $_POST['nama'] ?? '';
-        $alamat = $_POST['alamat'] ?? '';
-        $kampus = $_POST['kampus'] ?? '';
-        $fakultas = $_POST['fakultas'] ?? '';
-        $jurusan = $_POST['jurusan'] ?? '';
-        $angkatan = !empty($_POST['angkatan']) ? (int)$_POST['angkatan'] : null;
-        $no_wa = $_POST['no_wa'] ?? '';
-        $email = $_POST['email'] ?? '';
-        $golongan_darah = $_POST['golongan_darah'] ?? '';
-        
-        if (!empty($nama) && !empty($kampus)) {
-            $anggotaModel->update($id, $nama, $alamat, $kampus, $fakultas, $jurusan, $angkatan, $no_wa, $email, $golongan_darah);
-            $_SESSION['flash_success'] = "Perubahan data anggota berhasil disimpan!";
+        $in = $this->readAnggotaInput();
+        if (empty($in['nama']) || empty($in['kampus'])) {
+            $this->redirectWithError('/admin/anggota/edit/' . (int)$id, 'Nama dan asal kampus wajib diisi!');
         }
+
+        $anggotaModel->update($id, $in['nama'], $in['alamat'], $in['kampus'], $in['fakultas'], $in['jurusan'], $in['angkatan'], $in['no_wa'], $in['email'], $in['golongan_darah']);
+        $_SESSION['flash_success'] = "Perubahan data anggota berhasil disimpan!";
         
         header('Location: /admin/anggota');
         exit;
@@ -419,22 +500,26 @@ class AdminController {
         foreach ($data as $row) {
             fputcsv($output, [
                 $no++,
-                $row['nama'],
-                $row['kampus'],
-                $row['fakultas'],
-                $row['jurusan'],
-                $row['angkatan'],
-                $row['no_wa'],
-                $row['email'] ?? '-',
-                $row['golongan_darah'] ?? '-',
-                $row['alamat'] ?? '-',
-                date('d-m-Y H:i', strtotime($row['created_at']))
+                $this->csvSafe($row['nama']),
+                $this->csvSafe($row['kampus']),
+                $this->csvSafe($row['fakultas']),
+                $this->csvSafe($row['jurusan']),
+                $this->csvSafe($row['angkatan']),
+                $this->csvSafe($row['no_wa']),
+                $this->csvSafe(!empty($row['email']) ? $row['email'] : '-'),
+                $this->csvSafe(!empty($row['golongan_darah']) ? $row['golongan_darah'] : '-'),
+                $this->csvSafe(!empty($row['alamat']) ? $row['alamat'] : '-'),
+                !empty($row['created_at']) ? date('d-m-Y H:i', strtotime($row['created_at'])) : '-'
             ]);
         }
 
         fclose($output);
         exit;
     }
+
+    // =====================================================================
+    // Galeri
+    // =====================================================================
 
     public function galeri() {
         global $uri;
@@ -453,28 +538,18 @@ class AdminController {
         require_once __DIR__ . '/../../app/Models/Galeri.php';
         $galeriModel = new \app\Models\Galeri();
         
-        $judul = $_POST['judul'] ?? '';
-        $foto = null;
+        $judul = trim($_POST['judul'] ?? '');
+        if (empty($judul)) {
+            $this->redirectWithError('/admin/galeri/tambah', 'Judul kegiatan wajib diisi!');
+        }
 
-        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../public/assets/images/galeri/';
-            $fileExtension = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-            $maxFileSize = 5 * 1024 * 1024; // 5MB
-            
-            if (in_array($fileExtension, $allowedExtensions) && $_FILES['foto']['size'] <= $maxFileSize) {
-                $fotoName = uniqid() . '.' . $fileExtension;
-                $uploadFile = $uploadDir . $fotoName;
-                if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadFile)) {
-                    $foto = $fotoName;
-                }
-            }
+        $upload = $this->handleImageUpload('foto', 'galeri', 'galeri_', true);
+        if ($upload['error']) {
+            $this->redirectWithError('/admin/galeri/tambah', 'Foto gagal diunggah: ' . $upload['error']);
         }
         
-        if (!empty($judul) && !empty($foto)) {
-            $galeriModel->create($judul, $foto);
-            $_SESSION['flash_success'] = "Foto dokumentasi galeri berhasil diunggah!";
-        }
+        $galeriModel->create($judul, $upload['file']);
+        $_SESSION['flash_success'] = "Foto dokumentasi galeri berhasil diunggah!";
         
         header('Location: /admin/galeri');
         exit;
@@ -485,19 +560,22 @@ class AdminController {
         $galeriModel = new \app\Models\Galeri();
         
         $g = $galeriModel->readById($id);
-        if ($g && !empty($g['foto'])) {
-            $filePath = __DIR__ . '/../../public/assets/images/galeri/' . $g['foto'];
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
+        if (!$g) {
+            $this->redirectWithError('/admin/galeri', 'Foto galeri tidak ditemukan!');
         }
 
         $galeriModel->delete($id);
+        $this->deleteImage('galeri', $g['foto'] ?? null);
         $_SESSION['flash_success'] = "Foto galeri berhasil dihapus!";
         
         header('Location: /admin/galeri');
         exit;
     }
+
+    // =====================================================================
+    // Slider
+    // =====================================================================
+
     public function slider() {
         global $uri;
         require_once __DIR__ . '/../../app/Models/Slider.php';
@@ -515,29 +593,13 @@ class AdminController {
         require_once __DIR__ . '/../../app/Models/Slider.php';
         $sliderModel = new \app\Models\Slider();
         
-        $foto = null;
-
-        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../public/assets/images/slider/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $fileExtension = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-            
-            if (in_array($fileExtension, $allowedExtensions)) {
-                $fotoName = uniqid() . '.' . $fileExtension;
-                $uploadFile = $uploadDir . $fotoName;
-                if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadFile)) {
-                    $foto = $fotoName;
-                }
-            }
+        $upload = $this->handleImageUpload('foto', 'slider', 'slider_', true);
+        if ($upload['error']) {
+            $this->redirectWithError('/admin/slider/tambah', 'Foto slider gagal diunggah: ' . $upload['error']);
         }
         
-        if (!empty($foto)) {
-            $sliderModel->create($foto);
-            $_SESSION['flash_success'] = "Foto slider beranda berhasil ditambahkan!";
-        }
+        $sliderModel->create($upload['file']);
+        $_SESSION['flash_success'] = "Foto slider beranda berhasil ditambahkan!";
         
         header('Location: /admin/slider');
         exit;
@@ -548,19 +610,21 @@ class AdminController {
         $sliderModel = new \app\Models\Slider();
         
         $s = $sliderModel->readById($id);
-        if ($s && !empty($s['foto'])) {
-            $filePath = __DIR__ . '/../../public/assets/images/slider/' . $s['foto'];
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
+        if (!$s) {
+            $this->redirectWithError('/admin/slider', 'Foto slider tidak ditemukan!');
         }
 
         $sliderModel->delete($id);
+        $this->deleteImage('slider', $s['foto'] ?? null);
         $_SESSION['flash_success'] = "Foto slider berhasil dihapus!";
         
         header('Location: /admin/slider');
         exit;
     }
+
+    // =====================================================================
+    // Akun Admin
+    // =====================================================================
 
     public function passwordForm() {
         global $uri;
@@ -578,10 +642,6 @@ class AdminController {
                 $_SESSION['admin_id'] = $admin['id'];
             }
         }
-
-        $error = $_SESSION['flash_error'] ?? null;
-        $success = $_SESSION['flash_success'] ?? null;
-        unset($_SESSION['flash_error'], $_SESSION['flash_success']);
 
         require_once __DIR__ . '/../../views/admin/password.php';
     }
@@ -603,9 +663,7 @@ class AdminController {
         }
 
         if (!$admin) {
-            $_SESSION['flash_error'] = "Sesi admin tidak valid. Silakan login kembali.";
-            header('Location: /admin/password');
-            exit;
+            $this->redirectWithError('/admin/password', 'Sesi admin tidak valid. Silakan login kembali.');
         }
 
         $passwordLama = $_POST['password_lama'] ?? '';
@@ -615,32 +673,24 @@ class AdminController {
 
         // Validasi password lama
         if (!password_verify($passwordLama, $admin['password'])) {
-            $_SESSION['flash_error'] = "Password lama yang Anda masukkan salah!";
-            header('Location: /admin/password');
-            exit;
+            $this->redirectWithError('/admin/password', 'Password lama yang Anda masukkan salah!');
         }
 
         // Validasi panjang password baru
         if (strlen($passwordBaru) < 6) {
-            $_SESSION['flash_error'] = "Password baru minimal harus 6 karakter!";
-            header('Location: /admin/password');
-            exit;
+            $this->redirectWithError('/admin/password', 'Password baru minimal harus 6 karakter!');
         }
 
         // Validasi konfirmasi password
         if ($passwordBaru !== $konfirmasiPassword) {
-            $_SESSION['flash_error'] = "Konfirmasi password baru tidak sesuai!";
-            header('Location: /admin/password');
-            exit;
+            $this->redirectWithError('/admin/password', 'Konfirmasi password baru tidak sesuai!');
         }
 
         // Update username jika diubah dan valid
         if (!empty($newUsername) && $newUsername !== $admin['username']) {
             $existing = $adminModel->findByUsername($newUsername);
             if ($existing && $existing['id'] != $admin['id']) {
-                $_SESSION['flash_error'] = "Username '" . htmlspecialchars($newUsername) . "' sudah digunakan!";
-                header('Location: /admin/password');
-                exit;
+                $this->redirectWithError('/admin/password', "Username '" . $newUsername . "' sudah digunakan!");
             }
             $adminModel->updateUsername($admin['id'], $newUsername);
             $_SESSION['admin_username'] = $newUsername;

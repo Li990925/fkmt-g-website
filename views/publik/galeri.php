@@ -55,6 +55,9 @@ function getKategoriGaleri($judul) {
                 <button class="galeri-filter-btn" onclick="filterGaleri('Keakraban', this)">
                     Keakraban
                 </button>
+                <button class="galeri-filter-btn" onclick="filterGaleri('Kegiatan', this)">
+                    Kegiatan Lainnya
+                </button>
             </div>
 
             <!-- Layout Switcher: Masonry, Bento Mosaic, Grid -->

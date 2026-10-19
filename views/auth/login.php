@@ -359,6 +359,7 @@
                 <?php endif; ?>
                 
                 <form action="/login" method="POST" id="loginForm">
+                    <?= \app\Config\Csrf::field() ?>
                     <div class="form-group">
                         <label for="username">Username</label>
                         <div class="input-group">
@@ -408,6 +409,18 @@
             setTimeout(function() {
                 form.submit();
             }, 1500);
+        });
+
+        // Reset status overlay jika pengguna kembali ke halaman ini via tombol back browser
+        window.addEventListener('pageshow', function() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.remove('active');
+            const btn = document.querySelector('.btn-login');
+            if (btn) {
+                btn.innerHTML = 'Masuk <i class="fas fa-arrow-right"></i>';
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
         });
     </script>
 </body>

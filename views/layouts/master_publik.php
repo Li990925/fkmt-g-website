@@ -10,7 +10,9 @@
     <meta name="keywords" content="FKMT-G, Forum Komunikasi Mahasiswa Toili Gorontalo, FKMT, Toili, Gorontalo, Paguyuban Toili, Organisasi Daerah Mahasiswa">
     <meta name="author" content="FKMT-G">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="http://fkmt-g.ifree.page<?= htmlspecialchars($currentUri ?? '') ?>">
+    <?php $canonicalPath = $currentUri ?? ($GLOBALS['uri'] ?? (parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/')); ?>
+    <link rel="canonical" href="http://fkmt-g.ifree.page<?= htmlspecialchars($canonicalPath) ?>">
+    <meta property="og:url" content="http://fkmt-g.ifree.page<?= htmlspecialchars($canonicalPath) ?>">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -31,7 +33,7 @@
     <link rel="manifest" href="/manifest.json">
 
     <!-- Custom Stylesheet with Cache Busting -->
-    <link rel="stylesheet" href="/assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../../public/assets/css/style.css') ?: '1' ?>">
 
     <!-- Critical CSS: Bulletproof Desktop & Mobile Device Isolation -->
     <style>

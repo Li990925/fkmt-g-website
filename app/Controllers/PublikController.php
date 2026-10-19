@@ -80,6 +80,9 @@ class PublikController {
             return;
         }
 
+        // URL kanonik tunggal untuk artikel (hindari duplikasi /berita/{id}, /berita/{slug}, /berita/detail/{slug})
+        $currentUri = '/berita/detail/' . (!empty($berita['slug']) ? $berita['slug'] : $berita['id']);
+
         // Ambil berita terbaru lainnya untuk rekomendasi bacaan
         $beritaTerkait = $beritaModel->readRecentExcept($berita['id'], 4);
 

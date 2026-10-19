@@ -12,6 +12,25 @@ class AuthController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = $_POST['username'] ?? '';
             $password = $_POST['password'] ?? '';
+
+            // Proteksi brute force: batasi 5 kali percobaan gagal berturut-turut (lockout 5 menit)
+            $attempts = $_SESSION['login_attempts'] ?? 0;
+            $lastAttempt = $_SESSION['last_login_attempt'] ?? 0;
+            if ($attempts >= 5 && (time() - $lastAttempt) < 300) {
+                $remaining = 300 - (time() - $lastAttempt);
+                $error = "Terlalu banyak percobaan login gagal. Silakan tunggu {$remaining} detik sebelum mencoba kembali.";
+                require_once __DIR__ . '/../../views/auth/login.php';
+                return;
+            } elseif ($attempts >= 5 && (time() - $lastAttempt) >= 300) {
+                // Reset setelah masa jeda berakhir
+                $_SESSION['login_attempts'] = 0;
+            }
+
+            if (!\app\Config\Csrf::verify()) {
+                $error = "Sesi login kedaluwarsa. Silakan coba lagi.";
+                require_once __DIR__ . '/../../views/auth/login.php';
+                return;
+            }
             
             require_once __DIR__ . '/../../app/Config/Database.php';
             $db = new \app\Config\Database();
@@ -26,10 +45,19 @@ class AuthController {
                 $_SESSION['admin_logged_in'] = true;
                 $_SESSION['admin_id'] = $admin['id'];
                 $_SESSION['admin_username'] = $admin['username'];
+                // Reset counter percobaan login gagal
+                unset($_SESSION['login_attempts'], $_SESSION['last_login_attempt']);
                 header('Location: /admin');
                 exit;
             } else {
-                $error = "Username atau password salah!";
+                $_SESSION['login_attempts'] = ($attempts + 1);
+                $_SESSION['last_login_attempt'] = time();
+                $sisa = 5 - $_SESSION['login_attempts'];
+                if ($sisa > 0) {
+                    $error = "Username atau password salah! (Sisa percobaan: {$sisa}x)";
+                } else {
+                    $error = "Terlalu banyak percobaan gagal. Akun dikunci sementara selama 5 menit.";
+                }
             }
         }
         
@@ -37,6 +65,16 @@ class AuthController {
     }
     
     public function logout() {
+        // Kosongkan seluruh data session
+        $_SESSION = [];
+        // Hapus cookie session dari browser
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
         session_destroy();
         header('Location: /');
         exit;

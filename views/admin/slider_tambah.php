@@ -7,7 +7,7 @@
     <form action="/admin/slider/tambah" method="POST" enctype="multipart/form-data">
         <div class="form-group" style="margin-bottom: 1.5rem;">
             <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1E293B;">Foto Slider (Mendatar / Landscape)</label>
-            <input type="file" name="foto" accept="image/*" required style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px;">
+            <input type="file" name="foto" accept="image/png, image/jpeg, image/webp" required style="width: 100%; padding: 0.8rem; border: 1px solid #CBD5E1; border-radius: 8px;">
             <small style="color: #64748B; display: block; margin-top: 0.5rem;">Format didukung: JPG, PNG, WEBP. Pastikan foto berbentuk landscape (mendatar) untuk hasil terbaik di beranda.</small>
         </div>
 
