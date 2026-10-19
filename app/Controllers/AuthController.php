@@ -10,18 +10,18 @@ class AuthController {
         
         $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
+            $username = trim($_POST['username'] ?? '');
             $password = $_POST['password'] ?? '';
 
-            // Proteksi brute force: batasi 5 kali percobaan gagal berturut-turut (lockout 5 menit)
+            // Proteksi brute force: batasi 10 kali percobaan gagal berturut-turut (lockout 3 menit)
             $attempts = $_SESSION['login_attempts'] ?? 0;
             $lastAttempt = $_SESSION['last_login_attempt'] ?? 0;
-            if ($attempts >= 5 && (time() - $lastAttempt) < 300) {
-                $remaining = 300 - (time() - $lastAttempt);
+            if ($attempts >= 10 && (time() - $lastAttempt) < 180) {
+                $remaining = 180 - (time() - $lastAttempt);
                 $error = "Terlalu banyak percobaan login gagal. Silakan tunggu {$remaining} detik sebelum mencoba kembali.";
                 require_once __DIR__ . '/../../views/auth/login.php';
                 return;
-            } elseif ($attempts >= 5 && (time() - $lastAttempt) >= 300) {
+            } elseif ($attempts >= 10 && (time() - $lastAttempt) >= 180) {
                 // Reset setelah masa jeda berakhir
                 $_SESSION['login_attempts'] = 0;
             }
@@ -36,7 +36,7 @@ class AuthController {
             $db = new \app\Config\Database();
             $conn = $db->getConnection();
             
-            $stmt = $conn->prepare("SELECT * FROM admin WHERE username = ?");
+            $stmt = $conn->prepare("SELECT * FROM admin WHERE LOWER(username) = LOWER(?) LIMIT 1");
             $stmt->execute([$username]);
             $admin = $stmt->fetch(\PDO::FETCH_ASSOC);
             
