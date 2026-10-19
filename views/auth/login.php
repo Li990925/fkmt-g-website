@@ -148,9 +148,32 @@
             transition: color 0.3s ease;
         }
 
+        .input-group .toggle-password {
+            position: absolute;
+            left: auto;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            cursor: pointer;
+            z-index: 2;
+            padding: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .input-group .toggle-password:hover {
+            color: #059669;
+        }
+
+        .input-group .toggle-password i {
+            position: static;
+            transform: none;
+            color: inherit;
+        }
+
         .form-group input {
             width: 100%;
-            padding: 1rem 1rem 1rem 3rem;
+            padding: 1rem 3rem 1rem 3rem;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
             font-size: 1.05rem;
@@ -363,7 +386,7 @@
                     <div class="form-group">
                         <label for="username">Username</label>
                         <div class="input-group">
-                            <input type="text" id="username" name="username" required autofocus placeholder="Masukkan username admin">
+                            <input type="text" id="username" name="username" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Masukkan username admin">
                             <i class="fas fa-user"></i>
                         </div>
                     </div>
@@ -371,8 +394,11 @@
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="input-group">
-                            <input type="password" id="password" name="password" required placeholder="Masukkan password">
+                            <input type="password" id="password" name="password" required autocomplete="current-password" autocapitalize="none" spellcheck="false" placeholder="Masukkan password">
                             <i class="fas fa-lock"></i>
+                            <span class="toggle-password" id="togglePassword" title="Lihat password">
+                                <i class="fas fa-eye" id="eyeIcon"></i>
+                            </span>
                         </div>
                     </div>
                     
@@ -391,6 +417,19 @@
     </div>
 
     <script>
+        // Toggle lihat/sembunyikan password
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (togglePassword && passwordInput && eyeIcon) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                eyeIcon.classList.toggle('fa-eye');
+                eyeIcon.classList.toggle('fa-eye-slash');
+            });
+        }
+
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault(); // Mencegah submit langsung
             

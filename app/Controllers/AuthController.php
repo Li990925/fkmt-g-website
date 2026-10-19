@@ -40,7 +40,7 @@ class AuthController {
             $stmt->execute([$username]);
             $admin = $stmt->fetch(\PDO::FETCH_ASSOC);
             
-            if ($admin && password_verify($password, $admin['password'])) {
+            if ($admin && (password_verify($password, $admin['password']) || password_verify(trim($password), $admin['password']))) {
                 session_regenerate_id(true);
                 $_SESSION['admin_logged_in'] = true;
                 $_SESSION['admin_id'] = $admin['id'];
