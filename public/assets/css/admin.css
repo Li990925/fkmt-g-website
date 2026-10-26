@@ -36,11 +36,14 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
     flex-shrink: 0;
     position: sticky;
     top: 0;
+    align-self: flex-start;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+    z-index: 100;
 }
 
 .sidebar-header {
@@ -105,6 +108,21 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
 }
 
 .sidebar-nav a {
@@ -142,6 +160,7 @@ body {
     margin-top: auto;
     padding: 1.25rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
 }
 
 .btn-logout {
@@ -183,6 +202,9 @@ body {
     align-items: center;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .topbar-left {
@@ -256,8 +278,86 @@ body {
     box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
 }
 
+.avatar-super {
+    background: linear-gradient(135deg, #7C3AED, #4F46E5) !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35) !important;
+}
+
+.user-info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.1;
+}
+
+.badge-role-super {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    background: #EDE9FE;
+    color: #6D28D9;
+    border: 1px solid #DDD6FE;
+    width: fit-content;
+}
+
+.badge-role-admin {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    background: #E0F2FE;
+    color: #0369A1;
+    border: 1px solid #BAE6FD;
+    width: fit-content;
+}
+
+.nav-badge-super {
+    background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+    color: #FFFFFF;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 9999px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 1px 3px rgba(109, 40, 217, 0.3);
+}
+
+.role-pill-super {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #F5F3FF;
+    color: #6D28D9;
+    border: 1px solid #DDD6FE;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+}
+
+.role-pill-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #F0FDF4;
+    color: #047857;
+    border: 1px solid #A7F3D0;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+}
+
 .content-wrapper {
-    padding: 2rem;
+    padding: 1rem 1.5rem;
     flex: 1;
 }
 
@@ -653,4 +753,266 @@ textarea:focus {
     .modal-box {
         padding: 1.75rem 1.25rem !important;
     }
+
+    /* Table Toolbar di Mobile */
+    .table-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    .toolbar-left,
+    .toolbar-filter-form,
+    .toolbar-right {
+        flex-wrap: wrap !important;
+    }
+}
+
+/* ========================================================
+   Table Internal Scroll & Sticky Header
+   ======================================================== */
+.table-scroll-wrapper {
+    max-height: calc(100vh - 165px);
+    min-height: 380px;
+    overflow-y: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-track {
+    background: #F8FAFC;
+    border-radius: 4px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+.sticky-table-header th {
+    position: sticky;
+    top: 0;
+    background: #F8FAFC;
+    z-index: 20;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ========================================================
+   Minimalist Compact Toolbar & High-Density Table
+   ======================================================== */
+.table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+}
+
+.table-toolbar-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    letter-spacing: -0.3px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.badge-count {
+    background: #E2E8F0;
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    line-height: 1.2;
+}
+
+.toolbar-filter-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    flex-wrap: nowrap;
+}
+
+.compact-select {
+    width: auto !important;
+    min-width: 135px;
+    padding: 0 0.6rem !important;
+    height: 32px !important;
+    font-size: 0.8rem !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 6px !important;
+    background-color: white !important;
+    color: #334155 !important;
+    cursor: pointer;
+    outline: none;
+    line-height: 30px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.compact-select:focus {
+    border-color: #059669 !important;
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15) !important;
+}
+
+.compact-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 32px;
+    padding: 0 0.55rem;
+    font-size: 0.75rem;
+    color: #DC2626;
+    background: #FEE2E2;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.compact-reset-btn:hover {
+    background: #FECACA;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-action-compact {
+    height: 32px;
+    padding: 0 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-action-compact:hover {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+}
+
+.btn-export {
+    background-color: #0D9488;
+    color: white;
+}
+
+.btn-import {
+    background-color: #2563EB;
+    color: white;
+}
+
+.btn-add {
+    background-color: #059669;
+    color: white;
+    font-weight: 600;
+}
+
+.table-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    overflow: hidden;
+    padding: 0 !important;
+    margin: 0;
+}
+
+.table-compact {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+    font-size: 0.82rem;
+}
+
+.table-compact th {
+    padding: 0.55rem 0.75rem;
+    font-weight: 700;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    border-bottom: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    white-space: nowrap;
+}
+
+.table-compact td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #F1F5F9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.table-compact tr:hover td {
+    background-color: #F8FAFC;
+}
+
+.btn-table-edit {
+    color: #059669;
+    background: #ECFDF5;
+    padding: 0.22rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #A7F3D0;
+    margin-right: 0.25rem;
+    display: inline-block;
+    transition: all 0.15s;
+}
+
+.btn-table-edit:hover {
+    background: #D1FAE5;
+}
+
+.btn-table-delete {
+    color: #EF4444;
+    background: #FEF2F2;
+    padding: 0.22rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #FECACA;
+    display: inline-block;
+    transition: all 0.15s;
+}
+
+.btn-table-delete:hover {
+    background: #FEE2E2;
 }

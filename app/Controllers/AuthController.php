@@ -43,8 +43,10 @@ class AuthController {
             if ($admin && (password_verify($password, $admin['password']) || password_verify(trim($password), $admin['password']))) {
                 session_regenerate_id(true);
                 $_SESSION['admin_logged_in'] = true;
-                $_SESSION['admin_id'] = $admin['id'];
+                $_SESSION['admin_id'] = (int)$admin['id'];
                 $_SESSION['admin_username'] = $admin['username'];
+                $_SESSION['admin_nama'] = !empty($admin['nama']) ? $admin['nama'] : $admin['username'];
+                $_SESSION['admin_role'] = $admin['role'] ?? 'admin';
                 // Reset counter percobaan login gagal
                 unset($_SESSION['login_attempts'], $_SESSION['last_login_attempt']);
                 header('Location: /admin');

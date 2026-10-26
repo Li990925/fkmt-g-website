@@ -34,6 +34,12 @@
             <a href="/admin/anggota" class="<?= strpos($uri ?? '', '/admin/anggota') === 0 ? 'active' : '' ?>">Kelola Anggota</a>
             <a href="/admin/galeri" class="<?= strpos($uri ?? '', '/admin/galeri') === 0 ? 'active' : '' ?>">Galeri Kegiatan</a>
             <a href="/admin/slider" class="<?= strpos($uri ?? '', '/admin/slider') === 0 ? 'active' : '' ?>">Kelola Slider</a>
+            <?php if (($_SESSION['admin_role'] ?? '') === 'super_admin'): ?>
+            <a href="/admin/users" class="<?= strpos($uri ?? '', '/admin/users') === 0 ? 'active' : '' ?>" style="display: flex; align-items: center; justify-content: space-between;">
+                <span>Kelola Pengguna</span>
+                <span class="nav-badge-super">Super</span>
+            </a>
+            <?php endif; ?>
             <a href="/admin/password" class="<?= ($uri ?? '') === '/admin/password' ? 'active' : '' ?>">Ganti Password</a>
             <a href="/" target="_blank" class="sidebar-link-external">Lihat Website &nearr;</a>
         </nav>
@@ -68,8 +74,17 @@
                 <div class="breadcrumb desktop-only">Admin Panel</div>
             </div>
             <div class="user-profile">
-                <div class="user-avatar-badge"><?= strtoupper(mb_substr($_SESSION['admin_username'] ?? 'A', 0, 1)) ?></div>
-                <span class="user-name-text"><?= htmlspecialchars($_SESSION['admin_username'] ?? 'Administrator') ?></span>
+                <div class="user-avatar-badge <?= ($_SESSION['admin_role'] ?? '') === 'super_admin' ? 'avatar-super' : '' ?>">
+                    <?= strtoupper(mb_substr($_SESSION['admin_username'] ?? 'A', 0, 1)) ?>
+                </div>
+                <div class="user-info-group">
+                    <span class="user-name-text"><?= htmlspecialchars($_SESSION['admin_nama'] ?? $_SESSION['admin_username'] ?? 'Administrator') ?></span>
+                    <?php if (($_SESSION['admin_role'] ?? '') === 'super_admin'): ?>
+                        <span class="badge-role-super">Super Admin</span>
+                    <?php else: ?>
+                        <span class="badge-role-admin">Admin</span>
+                    <?php endif; ?>
+                </div>
             </div>
         </header>
         

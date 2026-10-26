@@ -111,6 +111,14 @@ elseif ($uri === '/admin' || strpos($uri, '/admin/') === 0) {
         $admin->anggota();
     } elseif ($uri === '/admin/anggota/export') {
         $admin->anggotaExport();
+    } elseif ($uri === '/admin/anggota/template') {
+        $admin->anggotaTemplate();
+    } elseif ($uri === '/admin/anggota/import') {
+        if ($isPost) {
+            $admin->anggotaImportProses();
+        } else {
+            $admin->anggotaImportForm();
+        }
     } elseif ($uri === '/admin/anggota/tambah') {
         if ($isPost) {
             $admin->anggotaSimpan();
@@ -136,6 +144,22 @@ elseif ($uri === '/admin' || strpos($uri, '/admin/') === 0) {
     } elseif (preg_match('#^/admin/slider/hapus/(\d+)$#', $uri, $matches)) {
         requirePost('/admin/slider');
         $admin->sliderHapus($matches[1]);
+    } elseif ($uri === '/admin/users') {
+        $admin->users();
+    } elseif ($uri === '/admin/users/tambah') {
+        if ($isPost) {
+            $admin->usersSimpan();
+        } else {
+            $admin->usersTambah();
+        }
+    } elseif (preg_match('#^/admin/users/hapus/(\d+)$#', $uri, $matches)) {
+        requirePost('/admin/users');
+        $admin->usersHapus($matches[1]);
+    } elseif (preg_match('#^/admin/users/edit/(\d+)$#', $uri, $matches)) {
+        $admin->usersEdit($matches[1]);
+    } elseif (preg_match('#^/admin/users/update/(\d+)$#', $uri, $matches)) {
+        requirePost('/admin/users');
+        $admin->usersUpdate($matches[1]);
     } elseif ($uri === '/admin/password') {
         if ($isPost) {
             $admin->passwordUpdate();

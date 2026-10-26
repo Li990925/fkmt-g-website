@@ -11,6 +11,16 @@ class Anggota {
     public function __construct() {
         $database = new Database();
         $this->conn = $database->getConnection();
+        $this->ensureSchema();
+    }
+
+    private function ensureSchema() {
+        try {
+            // Pastikan kolom golongan_darah minimal varchar(20) agar aman untuk berbagai variasi input
+            $this->conn->exec("ALTER TABLE " . $this->table_name . " MODIFY COLUMN golongan_darah VARCHAR(20) DEFAULT NULL");
+        } catch (\Throwable $e) {
+            // Abaikan jika tidak memiliki izin ALTER atau sudah sesuai
+        }
     }
 
     public function readAll($angkatanFilter = null, $sort = null) {
@@ -98,5 +108,24 @@ class Anggota {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
+    }
+
+    public function deleteAll($angkatan = null) {
+        if (!empty($angkatan)) {
+            $query = "DELETE FROM " . $this->table_name . " WHERE angkatan = :angkatan";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':angkatan', $angkatan, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->rowCount();
+        } else {
+            $query = "DELETE FROM " . $this->table_name;
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            $deletedCount = $stmt->rowCount();
+            try {
+                $this->conn->exec("ALTER TABLE " . $this->table_name . " AUTO_INCREMENT = 1");
+            } catch (\Throwable $e) {}
+            return $deletedCount;
+        }
     }
 }

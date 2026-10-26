@@ -81,13 +81,18 @@ Buka peramban (*browser*) dan akses: **[http://localhost:8000](http://localhost:
 
 ---
 
-## 🔐 Kredensial Login Admin Bawaan
+## 🔐 Kredensial Login Bawaan & Peran (Role)
 
 - **Halaman Login:** [http://localhost:8000/login](http://localhost:8000/login)
-- **Username:** `admin`
-- **Password:** `admin123`
+- **Username Default:** `admin`
+- **Password Default:** `admin123`
+- **Peran Akun:** `Super Admin`
 
-*(Disarankan segera mengubah password setelah proses deployment ke server produksi).*
+### Struktur Peran (Role-Based Access Control)
+1. **Super Admin:** Akses penuh 100%, termasuk menu eksklusif **Kelola Pengguna** untuk menambah, mengedit hak akses, mereset password, dan menghapus akun pengurus lain.
+2. **Admin / Pengurus:** Akses operasional harian untuk mengelola berita, galeri, anggota, slider, dan susunan kepengurusan. Menu pengelolaan akun admin dibatasi secara otomatis.
+
+*(Disarankan segera mengubah password default setelah proses deployment ke server produksi).*
 
 ---
 

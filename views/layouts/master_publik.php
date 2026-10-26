@@ -10,15 +10,48 @@
     <meta name="keywords" content="FKMT-G, Forum Komunikasi Mahasiswa Toili Gorontalo, FKMT, Toili, Gorontalo, Paguyuban Toili, Organisasi Daerah Mahasiswa">
     <meta name="author" content="FKMT-G">
     <meta name="robots" content="index, follow">
-    <?php $canonicalPath = $currentUri ?? ($GLOBALS['uri'] ?? (parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/')); ?>
-    <link rel="canonical" href="http://fkmt-g.ifree.page<?= htmlspecialchars($canonicalPath) ?>">
-    <meta property="og:url" content="http://fkmt-g.ifree.page<?= htmlspecialchars($canonicalPath) ?>">
+    <?php 
+        $reqScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $reqHost = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'fkmt-g.ifree.page';
+        $baseUrl = $reqScheme . '://' . $reqHost;
+        $canonicalPath = $currentUri ?? ($GLOBALS['uri'] ?? (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'));
+        $fullCanonicalUrl = $baseUrl . $canonicalPath;
+    ?>
+    <link rel="canonical" href="<?= htmlspecialchars($fullCanonicalUrl) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($fullCanonicalUrl) ?>">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="FKMT-G">
     <meta property="og:title" content="<?= !empty($title) ? htmlspecialchars($title) : 'FKMT-G | Forum Komunikasi Mahasiswa Toili-Gorontalo' ?>">
     <meta property="og:description" content="Wadah silaturahmi mahasiswa Toili di Gorontalo. Bersama merawat persaudaraan dan membangun daerah.">
+    <meta property="og:image" content="<?= htmlspecialchars($baseUrl) ?>/assets/images/logo.png">
+
+    <!-- Google Search Structured Data (Site Name & Organization Schema) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "FKMT-G",
+      "alternateName": [
+        "Forum Komunikasi Mahasiswa Toili-Gorontalo",
+        "FKMTG",
+        "Paguyuban FKMT-G"
+      ],
+      "url": "<?= htmlspecialchars($baseUrl) ?>/"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "FKMT-G",
+      "alternateName": "Forum Komunikasi Mahasiswa Toili-Gorontalo",
+      "url": "<?= htmlspecialchars($baseUrl) ?>/",
+      "logo": "<?= htmlspecialchars($baseUrl) ?>/assets/images/logo.png",
+      "description": "Website Resmi Forum Komunikasi Mahasiswa Toili-Gorontalo (FKMT-G)"
+    }
+    </script>
     
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

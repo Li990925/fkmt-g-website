@@ -144,6 +144,7 @@ class AdminController {
         $totalAnggota = (int)$conn->query("SELECT COUNT(*) as total FROM anggota")->fetch()['total'];
         $totalGaleri = (int)$conn->query("SELECT COUNT(*) as total FROM galeri")->fetch()['total'];
         $totalSlider = (int)$conn->query("SELECT COUNT(*) as total FROM slider")->fetch()['total'];
+        $totalUsers = (int)$conn->query("SELECT COUNT(*) as total FROM admin")->fetch()['total'];
 
         // Data aktivitas terbaru untuk dashboard
         $recentBerita = $conn->query("SELECT id, judul, slug, kategori, created_at FROM berita ORDER BY created_at DESC LIMIT 4")->fetchAll();
@@ -517,6 +518,262 @@ class AdminController {
         exit;
     }
 
+    public function anggotaTemplate() {
+        require_once __DIR__ . '/../../app/Helpers/ExcelHelper.php';
+
+        $format = strtolower($_GET['format'] ?? 'xlsx');
+        if ($format === 'csv') {
+            $filename = 'template_data_anggota_fkmtg.csv';
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($output, [
+                'Nama Lengkap', 'Asal Kampus', 'Fakultas', 'Jurusan', 'Tahun Angkatan', 'Nomor WhatsApp', 'Email', 'Golongan Darah', 'Alamat Domisili'
+            ]);
+            fputcsv($output, [
+                'Ahmad Fauzi', 'Universitas Negeri Gorontalo', 'Fakultas Teknik', 'Teknik Informatika', '2022', '081234567890', 'ahmad.fauzi@gmail.com', 'O', 'Jl. Trans Sulawesi, Toili'
+            ]);
+            fputcsv($output, [
+                'Siti Nurhaliza', 'IAIN Sultan Amai Gorontalo', 'Fakultas Tarbiyah', 'Pendidikan Agama Islam', '2023', '085298765432', 'siti.nur@gmail.com', 'A', 'Desa Mansahang, Kec. Toili'
+            ]);
+            fclose($output);
+            exit;
+        }
+
+        // Default: Unduh file Excel asli (.xlsx)
+        \app\Helpers\ExcelHelper::streamTemplateXlsx('template_data_anggota_fkmtg.xlsx');
+    }
+
+    public function anggotaImportForm() {
+        global $uri;
+        require_once __DIR__ . '/../../views/admin/anggota_import.php';
+    }
+
+    public function anggotaImportProses() {
+        require_once __DIR__ . '/../../app/Models/Anggota.php';
+        require_once __DIR__ . '/../../app/Helpers/ExcelHelper.php';
+        $anggotaModel = new \app\Models\Anggota();
+
+        $file = $_FILES['file_excel'] ?? null;
+        if (!$file || !isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            $this->redirectWithError('/admin/anggota/import', 'Silakan pilih berkas file Excel (.xlsx) atau CSV (.csv) terlebih dahulu.');
+        }
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $this->redirectWithError('/admin/anggota/import', 'Gagal mengunggah file (kode error: ' . (int)$file['error'] . ').');
+        }
+
+        $filename = $file['name'] ?? '';
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        if (!in_array($ext, ['xlsx', 'csv', 'txt'], true)) {
+            $this->redirectWithError('/admin/anggota/import', 'Format file tidak didukung! Harap unggah file Microsoft Excel (.xlsx) atau CSV (.csv).');
+        }
+
+        $filepath = $file['tmp_name'];
+        if (!is_uploaded_file($filepath)) {
+            $this->redirectWithError('/admin/anggota/import', 'File unggahan tidak valid.');
+        }
+
+        // Baca seluruh baris data menggunakan ExcelHelper
+        $allRows = \app\Helpers\ExcelHelper::parseRows($filepath, $filename);
+        if ($allRows === false || empty($allRows)) {
+            $this->redirectWithError('/admin/anggota/import', 'Gagal membaca berkas Excel. Pastikan berkas tidak rusak atau terproteksi kata sandi.');
+        }
+
+        $defaultAngkatan = !empty($_POST['default_angkatan']) ? (int)$_POST['default_angkatan'] : null;
+
+        $berhasil = 0;
+        $dilewati = 0;
+        $angkatanSummary = [];
+
+        // 1. Deteksi Baris Header Secara Cerdas (Smart Dynamic Header Mapping)
+        $headerMap = null;
+        $dataStartIndex = 0;
+
+        for ($i = 0; $i < min(5, count($allRows)); $i++) {
+            $candidateRow = $allRows[$i];
+            $map = [];
+            foreach ($candidateRow as $colIdx => $colVal) {
+                $cleaned = strtolower(trim((string)$colVal));
+                $cleaned = preg_replace('/[^a-z0-9_]/', ' ', $cleaned);
+                $cleaned = trim(preg_replace('/\s+/', ' ', $cleaned));
+
+                if (empty($cleaned)) continue;
+
+                if (!isset($map['nama']) && (preg_match('/^(no|nomor)$/', $cleaned) === 0) && (strpos($cleaned, 'nama') !== false || strpos($cleaned, 'name') !== false || strpos($cleaned, 'anggota') !== false)) {
+                    $map['nama'] = $colIdx;
+                } elseif (!isset($map['kampus']) && (strpos($cleaned, 'kampus') !== false || strpos($cleaned, 'universitas') !== false || strpos($cleaned, 'univ') !== false || strpos($cleaned, 'perguruan tinggi') !== false || strpos($cleaned, 'institusi') !== false || strpos($cleaned, 'university') !== false)) {
+                    $map['kampus'] = $colIdx;
+                } elseif (!isset($map['fakultas']) && (strpos($cleaned, 'fakultas') !== false || strpos($cleaned, 'faculty') !== false || strpos($cleaned, 'fak') !== false)) {
+                    $map['fakultas'] = $colIdx;
+                } elseif (!isset($map['jurusan']) && (strpos($cleaned, 'jurusan') !== false || strpos($cleaned, 'prodi') !== false || strpos($cleaned, 'program studi') !== false || strpos($cleaned, 'major') !== false || strpos($cleaned, 'departemen') !== false)) {
+                    $map['jurusan'] = $colIdx;
+                } elseif (!isset($map['angkatan']) && (strpos($cleaned, 'angkatan') !== false || strpos($cleaned, 'tahun masuk') !== false || strpos($cleaned, 'thn masuk') !== false || strpos($cleaned, 'cohort') !== false || strpos($cleaned, 'batch') !== false || $cleaned === 'tahun' || $cleaned === 'year')) {
+                    $map['angkatan'] = $colIdx;
+                } elseif (!isset($map['no_wa']) && (strpos($cleaned, 'wa') !== false || strpos($cleaned, 'whatsapp') !== false || strpos($cleaned, 'hp') !== false || strpos($cleaned, 'telepon') !== false || strpos($cleaned, 'telp') !== false || strpos($cleaned, 'phone') !== false || strpos($cleaned, 'kontak') !== false || strpos($cleaned, 'mobile') !== false)) {
+                    $map['no_wa'] = $colIdx;
+                } elseif (!isset($map['email']) && (strpos($cleaned, 'email') !== false || strpos($cleaned, 'surel') !== false || strpos($cleaned, 'mail') !== false)) {
+                    $map['email'] = $colIdx;
+                } elseif (!isset($map['golongan_darah']) && (strpos($cleaned, 'darah') !== false || strpos($cleaned, 'goldar') !== false || strpos($cleaned, 'blood') !== false)) {
+                    $map['golongan_darah'] = $colIdx;
+                } elseif (!isset($map['alamat']) && (strpos($cleaned, 'alamat') !== false || strpos($cleaned, 'domisili') !== false || strpos($cleaned, 'address') !== false || strpos($cleaned, 'tempat tinggal') !== false)) {
+                    $map['alamat'] = $colIdx;
+                }
+            }
+
+            // Jika setidaknya menemukan kolom nama atau kampus dan total minimal 2 kolom terpetakan
+            if (isset($map['nama']) || (isset($map['kampus']) && count($map) >= 2)) {
+                $headerMap = $map;
+                $dataStartIndex = $i + 1;
+                break;
+            }
+        }
+
+        // Fallback jika tidak ditemukan header tertulis
+        if ($headerMap === null) {
+            $firstRow = $allRows[0] ?? [];
+            // Jika kolom pertama bernilai angka (contoh kolom No / urutan), geser index +1
+            $isFirstColNumeric = isset($firstRow[0]) && is_numeric(trim((string)$firstRow[0]));
+            $offset = $isFirstColNumeric ? 1 : 0;
+
+            $headerMap = [
+                'nama'           => 0 + $offset,
+                'kampus'         => 1 + $offset,
+                'fakultas'       => 2 + $offset,
+                'jurusan'        => 3 + $offset,
+                'angkatan'       => 4 + $offset,
+                'no_wa'          => 5 + $offset,
+                'email'          => 6 + $offset,
+                'golongan_darah' => 7 + $offset,
+                'alamat'         => 8 + $offset,
+            ];
+            $dataStartIndex = 0;
+        }
+
+        // 2. Proses Setiap Baris Data
+        for ($rowIndex = $dataStartIndex; $rowIndex < count($allRows); $rowIndex++) {
+            $row = $allRows[$rowIndex];
+
+            // Lewati baris kosong
+            if (empty(array_filter($row, fn($v) => trim((string)$v) !== ''))) {
+                continue;
+            }
+
+            $namaRaw           = $row[$headerMap['nama'] ?? 0] ?? '';
+            $kampusRaw         = $row[$headerMap['kampus'] ?? 1] ?? '';
+            $fakultasRaw       = $row[$headerMap['fakultas'] ?? 2] ?? '';
+            $jurusanRaw        = $row[$headerMap['jurusan'] ?? 3] ?? '';
+            $angkatanRaw       = $row[$headerMap['angkatan'] ?? 4] ?? '';
+            $noWaRaw           = $row[$headerMap['no_wa'] ?? 5] ?? '';
+            $emailRaw          = $row[$headerMap['email'] ?? 6] ?? '';
+            $golDarahRaw       = $row[$headerMap['golongan_darah'] ?? 7] ?? '';
+            $alamatRaw         = $row[$headerMap['alamat'] ?? 8] ?? '';
+
+            $nama     = mb_substr(trim((string)$namaRaw), 0, 255);
+            $kampus   = mb_substr(trim((string)$kampusRaw), 0, 255);
+            $fakultas = mb_substr(trim((string)$fakultasRaw), 0, 255);
+            $jurusan  = mb_substr(trim((string)$jurusanRaw), 0, 255);
+            $no_wa    = mb_substr(trim((string)$noWaRaw), 0, 20);
+            $email    = mb_substr(trim((string)$emailRaw), 0, 255);
+            $alamat   = trim((string)$alamatRaw);
+
+            // Sanitasi cerdas Golongan Darah agar tidak error SQL data truncation
+            $golDarahClean = strtoupper(trim((string)$golDarahRaw));
+            if (strpos($golDarahClean, '@') !== false || mb_strlen($golDarahClean) > 20) {
+                $golongan_darah = '';
+            } else {
+                $normBlood = preg_replace('/^(GOLONGAN\s+DARAH|GOL\.\s*DARAH|GOL\s+DARAH|GOLDAR|GOLONGAN|GOL)\s*/i', '', $golDarahClean);
+                $normBlood = trim($normBlood);
+                if (preg_match('/^(AB|A|B|O)(?:\s*(\+|\-|POSITIF|NEGATIF))?$/i', $normBlood, $bloodMatch)) {
+                    $bType = $bloodMatch[1];
+                    if (!empty($bloodMatch[2])) {
+                        $bSign = (stripos($bloodMatch[2], '+') !== false || stripos($bloodMatch[2], 'pos') !== false) ? '+' : '-';
+                        $bType .= $bSign;
+                    }
+                    $golongan_darah = $bType;
+                } elseif (in_array($golDarahClean, ['-', 'TIDAK TAHU', 'BELUM TAHU', 'N/A', ''])) {
+                    $golongan_darah = ($golDarahClean === '-') ? '-' : '';
+                } else {
+                    $golongan_darah = mb_substr($normBlood, 0, 10);
+                }
+            }
+
+            // Ekstraksi Angkatan (deteksi 4 digit tahun)
+            $angkatan = null;
+            if (!empty($angkatanRaw)) {
+                if (preg_match('/\b(19\d{2}|20\d{2})\b/', (string)$angkatanRaw, $yearMatch)) {
+                    $angkatan = (int)$yearMatch[1];
+                } elseif (is_numeric($angkatanRaw)) {
+                    $angkatan = (int)$angkatanRaw;
+                }
+            }
+            if (!$angkatan) {
+                $angkatan = $defaultAngkatan;
+            }
+
+            // Validasi field wajib (Nama dan Kampus)
+            if (empty($nama) || empty($kampus)) {
+                $dilewati++;
+                continue;
+            }
+
+            // Jangan masukkan baris jika ternyata masih baris judul/header yang berulang
+            if (strtolower($nama) === 'nama' || strtolower($nama) === 'nama lengkap') {
+                continue;
+            }
+
+            try {
+                $saved = $anggotaModel->create(
+                    $nama,
+                    $alamat,
+                    $kampus,
+                    $fakultas,
+                    $jurusan,
+                    $angkatan,
+                    $no_wa,
+                    $email,
+                    $golongan_darah
+                );
+            } catch (\Throwable $e) {
+                $saved = false;
+                error_log("Gagal import baris anggota: " . $e->getMessage());
+            }
+
+            if ($saved) {
+                $berhasil++;
+                $labelAngkatan = $angkatan ? "Angkatan {$angkatan}" : "Tanpa Angkatan";
+                $angkatanSummary[$labelAngkatan] = ($angkatanSummary[$labelAngkatan] ?? 0) + 1;
+            } else {
+                $dilewati++;
+            }
+        }
+
+        if ($berhasil > 0) {
+            // Rangkum pemetaan per angkatan untuk notifikasi sukses
+            $breakdown = [];
+            ksort($angkatanSummary);
+            foreach ($angkatanSummary as $lbl => $count) {
+                $breakdown[] = "{$count} {$lbl}";
+            }
+            $breakdownText = !empty($breakdown) ? " (Terpetakan: " . implode(', ', $breakdown) . ")" : "";
+
+            $msg = "Berhasil mengimpor {$berhasil} data anggota baru{$breakdownText}!";
+            if ($dilewati > 0) {
+                $msg .= " Catatan: {$dilewati} baris dilewati karena kolom nama/kampus kosong.";
+            }
+            $_SESSION['flash_success'] = $msg;
+            header('Location: /admin/anggota');
+            exit;
+        } else {
+            $this->redirectWithError('/admin/anggota/import', 'Tidak ada data valid yang dapat diimpor. Pastikan file memiliki baris data dengan kolom Nama dan Kampus yang terisi.');
+        }
+    }
+
     // =====================================================================
     // Galeri
     // =====================================================================
@@ -702,6 +959,177 @@ class AdminController {
 
         $_SESSION['flash_success'] = "Password akun admin berhasil diperbarui!";
         header('Location: /admin/password');
+        exit;
+    }
+
+    // =====================================================================
+    // Otorisasi Super Admin
+    // =====================================================================
+
+    private function requireSuperAdmin() {
+        if (($_SESSION['admin_role'] ?? '') !== 'super_admin') {
+            $this->redirectWithError('/admin', 'Akses ditolak: Menu ini hanya dapat diakses oleh Super Admin.');
+        }
+    }
+
+    // =====================================================================
+    // Kelola Pengguna / Admin (Khusus Super Admin)
+    // =====================================================================
+
+    public function users() {
+        global $uri;
+        $this->requireSuperAdmin();
+        require_once __DIR__ . '/../../app/Models/Admin.php';
+        $adminModel = new \app\Models\Admin();
+        $semuaAdmin = $adminModel->getAll();
+        require_once __DIR__ . '/../../views/admin/users_index.php';
+    }
+
+    public function usersTambah() {
+        global $uri;
+        $this->requireSuperAdmin();
+        require_once __DIR__ . '/../../views/admin/users_tambah.php';
+    }
+
+    public function usersSimpan() {
+        $this->requireSuperAdmin();
+        require_once __DIR__ . '/../../app/Models/Admin.php';
+        $adminModel = new \app\Models\Admin();
+
+        $username = strtolower(trim($_POST['username'] ?? ''));
+        $nama = trim($_POST['nama'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $role = trim($_POST['role'] ?? 'admin');
+
+        if (!in_array($role, ['super_admin', 'admin'], true)) {
+            $role = 'admin';
+        }
+
+        if (empty($username) || strlen($username) < 3) {
+            $this->redirectWithError('/admin/users/tambah', 'Username minimal 3 karakter!');
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $username)) {
+            $this->redirectWithError('/admin/users/tambah', 'Username hanya boleh huruf, angka, underscore (_), titik (.), atau tanda hubung (-).');
+        }
+
+        if (empty($nama)) {
+            $nama = ucfirst($username);
+        }
+
+        if (empty($password) || strlen($password) < 6) {
+            $this->redirectWithError('/admin/users/tambah', 'Password minimal 6 karakter!');
+        }
+
+        if ($adminModel->isUsernameTaken($username)) {
+            $this->redirectWithError('/admin/users/tambah', "Username '{$username}' sudah terdaftar! Gunakan username lain.");
+        }
+
+        $adminModel->create($username, $nama, $password, $role);
+        $_SESSION['flash_success'] = "Akun admin baru '{$username}' berhasil ditambahkan!";
+        header('Location: /admin/users');
+        exit;
+    }
+
+    public function usersEdit($id) {
+        global $uri;
+        $this->requireSuperAdmin();
+        require_once __DIR__ . '/../../app/Models/Admin.php';
+        $adminModel = new \app\Models\Admin();
+
+        $adminUser = $adminModel->findById((int)$id);
+        if (!$adminUser) {
+            $this->redirectWithError('/admin/users', 'Data pengguna tidak ditemukan!');
+        }
+
+        require_once __DIR__ . '/../../views/admin/users_edit.php';
+    }
+
+    public function usersUpdate($id) {
+        $this->requireSuperAdmin();
+        require_once __DIR__ . '/../../app/Models/Admin.php';
+        $adminModel = new \app\Models\Admin();
+
+        $id = (int)$id;
+        $adminUser = $adminModel->findById($id);
+        if (!$adminUser) {
+            $this->redirectWithError('/admin/users', 'Data pengguna tidak ditemukan!');
+        }
+
+        $username = strtolower(trim($_POST['username'] ?? ''));
+        $nama = trim($_POST['nama'] ?? '');
+        $role = trim($_POST['role'] ?? 'admin');
+        $newPassword = $_POST['password_baru'] ?? '';
+
+        if (!in_array($role, ['super_admin', 'admin'], true)) {
+            $role = 'admin';
+        }
+
+        if (empty($username) || strlen($username) < 3) {
+            $this->redirectWithError("/admin/users/edit/{$id}", 'Username minimal 3 karakter!');
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $username)) {
+            $this->redirectWithError("/admin/users/edit/{$id}", 'Username hanya boleh huruf, angka, underscore (_), titik (.), atau tanda hubung (-).');
+        }
+
+        if (empty($nama)) {
+            $nama = ucfirst($username);
+        }
+
+        // Cegah Super Admin terakhir menurunkan perannya sendiri menjadi admin biasa
+        if ($adminUser['role'] === 'super_admin' && $role !== 'super_admin') {
+            if ($adminModel->countSuperAdmins() <= 1) {
+                $this->redirectWithError("/admin/users/edit/{$id}", 'Gagal mengubah role: Sistem harus memiliki setidaknya satu Super Admin.');
+            }
+        }
+
+        if ($adminModel->isUsernameTaken($username, $id)) {
+            $this->redirectWithError("/admin/users/edit/{$id}", "Username '{$username}' sudah digunakan oleh pengguna lain!");
+        }
+
+        if (!empty($newPassword) && strlen($newPassword) < 6) {
+            $this->redirectWithError("/admin/users/edit/{$id}", 'Password baru minimal 6 karakter!');
+        }
+
+        $adminModel->update($id, $username, $nama, $role, !empty($newPassword) ? $newPassword : null);
+
+        // Jika mengedit akun diri sendiri, perbarui data session
+        if (($adminUser['id'] ?? 0) === (int)($_SESSION['admin_id'] ?? 0)) {
+            $_SESSION['admin_username'] = $username;
+            $_SESSION['admin_nama'] = $nama;
+            $_SESSION['admin_role'] = $role;
+        }
+
+        $_SESSION['flash_success'] = "Data akun '{$username}' berhasil diperbarui!";
+        header('Location: /admin/users');
+        exit;
+    }
+
+    public function usersHapus($id) {
+        $this->requireSuperAdmin();
+        require_once __DIR__ . '/../../app/Models/Admin.php';
+        $adminModel = new \app\Models\Admin();
+
+        $id = (int)$id;
+        $adminUser = $adminModel->findById($id);
+        if (!$adminUser) {
+            $this->redirectWithError('/admin/users', 'Data pengguna tidak ditemukan!');
+        }
+
+        // Cegah menghapus akun sendiri
+        if ($id === (int)($_SESSION['admin_id'] ?? 0)) {
+            $this->redirectWithError('/admin/users', 'Anda tidak dapat menghapus akun Anda sendiri saat sedang aktif login!');
+        }
+
+        // Cegah menghapus super admin jika hanya tinggal satu
+        if ($adminUser['role'] === 'super_admin' && $adminModel->countSuperAdmins() <= 1) {
+            $this->redirectWithError('/admin/users', 'Gagal menghapus: Sistem harus memiliki setidaknya satu Super Admin.');
+        }
+
+        $adminModel->delete($id);
+        $_SESSION['flash_success'] = "Akun pengguna '{$adminUser['username']}' berhasil dihapus.";
+        header('Location: /admin/users');
         exit;
     }
 }

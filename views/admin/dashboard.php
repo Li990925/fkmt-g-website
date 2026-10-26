@@ -101,6 +101,23 @@
             </div>
         </div>
     </a>
+
+    <?php if (($_SESSION['admin_role'] ?? '') === 'super_admin'): ?>
+    <!-- Stat Pengguna (Super Admin) -->
+    <a href="/admin/users" style="text-decoration: none; color: inherit;">
+        <div class="card" style="display: flex; align-items: center; gap: 1.25rem; border-left: 4px solid #6D28D9; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(109, 40, 217, 0.1); display: flex; align-items: center; justify-content: center; color: #6D28D9;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 0.85rem; color: #64748B; font-weight: 500;">Pengguna & Role</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: #4C1D95; line-height: 1.1;"><?= $totalUsers ?? 1 ?></div>
+            </div>
+        </div>
+    </a>
+    <?php endif; ?>
 </div>
 
 <!-- Aksi Cepat / Quick Actions -->
